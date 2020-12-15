@@ -53,7 +53,7 @@ func(c *TransmissionClient) Initialize() error {
 	c.client = &http.Client{}
 	logger.Info("Initialize Server: %v\n", c.URL)
 
-	c.RateLimiter = rate.NewLimiter(rate.Every(800 * time.Millisecond), 2)
+	c.RateLimiter = rate.NewLimiter(rate.Every(650 * time.Millisecond), 2)
 
 	if len(c.Server.Proxy) != 0 {
 
