@@ -1,8 +1,11 @@
 package main
 
 import (
+	"time"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"github.com/akamensky/argparse"
 	"github.com/whatust/transmission-rss/logger"
 	"github.com/whatust/transmission-rss/helper"
@@ -34,6 +37,14 @@ func main () {
 			Help: "Prints out the added torrent files without send it to the RPC client.",
 		},
 	)
+	daemon := parser.Flag(
+		"f",
+		"daemon",
+		&argparse.Options{
+			Required: false,
+			Help: "Daemonize process.",
+		},
+	)
 
 	// Parse input arguments
 	err := parser.Parse(os.Args)
@@ -55,17 +66,34 @@ func main () {
 		os.Exit(1)
 	}
 
+	// Create signal handler when daemonized
+	if *daemon {
+		go signalHandler()
+	}
+
 	// Create transmission client
 	myClient := client.TransmissionClient{
 		Server: conf.ServerConfig,
 		Creds: conf.CredsConfig,
 	}
-	var client client.Client = & myClient
+	var client client.Client = &myClient
 	
 	err = client.Initialize()
 	if err != nil {
 		logger.Error("Could not initialize RPC client: %v", err)
 		os.Exit(1)
+	}
+	logger.Info("Client Initialized\n")
+
+	// Load seen torrents
+	var seenTorrent helper.SeenSet = helper.SeenSet{
+		Old: make(map[string]struct{}),
+		New: make(map[string]struct{}),
+	}
+
+	err = seenTorrent.LoadSeen(conf.SeenFile)
+	if err != nil {
+		logger.Error("Could not load seen torrents: %v\n", err)
 	}
 
 	// Load RSS feed list
@@ -75,24 +103,40 @@ func main () {
 		os.Exit(1)
 	}
 
-	// Load seen torrents
-	var seenTorrent helper.SeenSet = helper.SeenSet{
-		Old: make(map[string]struct{}),
-		New: make(map[string]struct{}),
-	}
-	err = seenTorrent.LoadSeen(conf.SeenFile)
-	if err != nil {
-		logger.Error("Could not load seen torrents: %v\n", err)
-	}
+	for true {
 
-	// Populate torrent from the feed list
-	client.AddFeeds(feedConfig.Feeds, seenTorrent)
+		// Populate torrent from the feed list
+		client.AddFeeds(feedConfig.Feeds, seenTorrent)
 
-	// Save updates to seen torrents file
-	err = seenTorrent.SaveSeen(conf.SeenFile)
-	if err != nil {
-		logger.Error("Unable to save seen torrents: %v\n", err)
+		// Save updates to seen torrents file
+		err = seenTorrent.SaveSeen(conf.SeenFile)
+		if err != nil {
+			logger.Error("Unable to save seen torrents: %v\n", err)
+		}
+
+		if !*daemon {
+			break
+		}
+
+		time.Sleep(time.Second * 300)
 	}
 
 	logger.Info("Dry Run: %v", *dry)
+}
+
+func cleanup() {
+
+}
+
+func signalHandler() {
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	s := <-sigs
+
+	logger.Info("Signal received: %v\n", s)
+
+	cleanup()
+	os.Exit(1)
 }
