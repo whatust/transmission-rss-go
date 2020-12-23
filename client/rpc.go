@@ -88,7 +88,7 @@ func (c TransmissionClient) getSessionID() (string, error) {
 
 		if err != nil || resp.StatusCode != 409 {
 			logger.Error("Unable to get sessionID: %v", err)
-			logger.Error("Waiting %v seconds util retry\n", c.Server.WaitTime)
+			logger.Error("Waiting %v seconds until retry\n", c.Server.WaitTime)
 			time.Sleep(time.Duration(c.Server.WaitTime) * time.Second)
 		} else {
 			sessionID = resp.Header.Get("X-Transmission-Session-Id")
