@@ -2,6 +2,7 @@ package client
 
 import (
 	//"io/ioutil"
+	"crypto/tls"
 	"bytes"
 	"fmt"
 	"time"
@@ -45,8 +46,9 @@ func(c *TransmissionClient) Initialize() error {
 	}
 	c.URL = URL.String()
 
-	c.client = &http.Client{}
-	logger.Info("Initialize Server: %v\n", c.URL)
+	logger.Info("Initializing Server: %v\n", c.URL)
+
+	var proxy func(*http.Request) (*url.URL, error);
 
 	if len(c.Server.Proxy) != 0 {
 
@@ -54,8 +56,19 @@ func(c *TransmissionClient) Initialize() error {
 		if err != nil {
 			logger.Warn("Could not parse proxy address: %v", err)
 		} else {
-			c.client.Transport = &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+			proxy = http.ProxyURL(proxyURL)
 		}
+	}
+
+	c.client = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig : &tls.Config{
+				InsecureSkipVerify: !c.Server.ValidateCert,
+			},
+			Proxy: proxy,
+			TLSHandshakeTimeout: 10 * time.Second,
+		},
+		Timeout: time.Duration(c.Server.Timeout) * time.Second,
 	}
 
 	sessionID, err := c.getSessionID()

@@ -15,6 +15,8 @@ type Server struct {
 	WaitTime int				`yaml:"waitTime"`
 	Proxy string				`yaml:"proxy"`
 	ProxyPort string			`yaml:"proxyPort"`
+	ValidateCert bool			`yaml:"validateCert" default:"true"`
+	Timeout int					`yaml:"timeout" default:"10"`
 }
 
 // Log struct used to parse yaml file
