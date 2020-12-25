@@ -81,6 +81,8 @@ func (c TransmissionClient) getSessionID() (string, error) {
 
 	var sessionID string
 
+	logger.Info("Getting session ID from: %v", c.URL)
+
 	req, err := http.NewRequest("GET", c.URL, nil)
 	if err != nil {
 		return "", err
@@ -114,7 +116,7 @@ func (c TransmissionClient) AddFeeds(confs []config.Feed, seenTorrent helper.See
 
 	for _, conf := range confs {
 
-		logger.Info("Processing feed: %v\n", conf)
+		logger.Info("Processing feed: %v\n", conf.URL)
 
 		feed, err := RetriveFeed(conf.URL)
 		if err != nil {
@@ -130,7 +132,7 @@ func (c TransmissionClient) getMatcher(feed []FeedItem, conf config.Feed, seenTo
 
 	for _, matcher := range conf.Matchers {
 
-		logger.Info("Processing feed: %v\n", matcher)
+		logger.Info("Matcher: %v\n", matcher.RegExp)
 
 		filter, err := CreateFilter(matcher, conf)
 		if err != nil {
