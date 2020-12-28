@@ -53,7 +53,7 @@ func(c *TransmissionClient) Initialize() error {
 	c.client = &http.Client{}
 	logger.Info("Initialize Server: %v\n", c.URL)
 
-	c.RateLimiter = rate.NewLimiter(rate.Every(650 * time.Millisecond), 2)
+	c.RateLimiter = rate.NewLimiter(rate.Every(350 * time.Millisecond), 2)
 
 	if len(c.Server.Proxy) != 0 {
 
@@ -217,7 +217,6 @@ func(c TransmissionClient) addTorrentURL(item FeedItem, path string, seen helper
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Transmission-Session-Id", c.sessionID)
 
-	logger.Info("Request:\n%v\n", req.Body)
 	resp, err := c.Do(req)
 
 	if err != nil {
