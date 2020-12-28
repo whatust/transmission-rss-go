@@ -74,18 +74,3 @@ func ParseXML(resp []byte) (*Feed, error) {
 
 	return &feed, nil
 }
-
-// RetriveTorrent ...
-func RetriveTorrent(url string) error {
-
-	resp, err := http.Get(url)
-
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	logger.Debug("Retriving torrent:\n %v\n", resp)
-
-	return nil
-}

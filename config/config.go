@@ -17,6 +17,8 @@ type Server struct {
 	ProxyPort string			`yaml:"proxyPort"`
 	ValidateCert bool			`yaml:"validateCert" default:"true"`
 	Timeout int					`yaml:"timeout" default:"10"`
+	SaveTorrent bool			`yaml:"saveTorrent" default:"false"`
+	TorrentPath string			`yaml:"torrentPath"`
 }
 
 // Log struct used to parse yaml file

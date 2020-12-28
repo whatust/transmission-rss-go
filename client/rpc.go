@@ -1,7 +1,10 @@
 package client
 
 import (
-	//"io/ioutil"
+	"io"
+	"os"
+	"path"
+	"io/ioutil"
 	"crypto/tls"
 	"bytes"
 	"fmt"
@@ -10,6 +13,7 @@ import (
 	"net/url"
 	"net/http"
 	"encoding/json"
+	"encoding/base64"
 	"github.com/whatust/transmission-rss/config"
 	"github.com/whatust/transmission-rss/helper"
 	"github.com/whatust/transmission-rss/logger"
@@ -73,6 +77,8 @@ func(c *TransmissionClient) Initialize() error {
 
 	sessionID, err := c.getSessionID()
 	c.sessionID = sessionID
+
+	fmt.Printf("%v\n", c.client.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify)
 
 	return err
 }
@@ -159,10 +165,26 @@ func (c TransmissionClient) addFeed(feed []FeedItem, filter *Filter, seenTorrent
 			continue
 		}
 
-		_, err := c.addTorrentURL(item.Link, filter.DownloadPath)
-		if err != nil {
-			logger.Error("Unable to add torrent: %v\n", err)
-			continue
+		if c.Server.SaveTorrent {
+
+			torrentPath, err := c.getTorrent(item.Link, c.Server.TorrentPath, item.Title)
+			if err != nil {
+				logger.Error("Unable to download torrent: %v\n", err)
+				continue
+			}
+
+			_, err = c.addTorrent(torrentPath, filter.DownloadPath)
+			if err != nil {
+				logger.Error("Unable to add torrent: %v\n", err)
+				continue
+			}
+
+		} else {
+			_, err := c.addTorrentURL(item.Link, filter.DownloadPath)
+			if err != nil {
+				logger.Error("Unable to add torrent: %v\n", err)
+				continue
+			}
 		}
 
 		seenTorrent.AddSeen(item.Title)
@@ -170,15 +192,26 @@ func (c TransmissionClient) addFeed(feed []FeedItem, filter *Filter, seenTorrent
 	}
 }
 
-type arguments struct {
+type argumentsURL struct {
 	Paused bool				`json:"paused"`
 	DownloadDir string		`json:"download-dir"`
 	Filename string			`json:"filename"`
 }
 
+type argumentsTorrent struct {
+	Paused bool				`json:"paused"`
+	DownloadDir string		`json:"download-dir"`
+	MetaInfo string			`json:"metainfo"`
+}
+
+type addURL struct {
+	Method string				`json:"method"`
+	Arguments argumentsURL		`json:"arguments"`
+}
+
 type addTorrent struct {
 	Method string				`json:"method"`
-	Arguments arguments			`json:"arguments"`
+	Arguments argumentsTorrent	`json:"arguments"`
 }
 
 type respTorrent struct {
@@ -200,9 +233,9 @@ type respTorrent struct {
 // AddTorrentURL adds a torrent to transmission server from an URL
 func(c TransmissionClient) addTorrentURL(url string, path string) (string, error) {
 
-	data := addTorrent{
+	data := addURL{
 		Method: "torrent-add",
-		Arguments: arguments {
+		Arguments: argumentsURL {
 			Paused: false,
 			DownloadDir: path,
 			Filename: url,
@@ -253,13 +286,96 @@ func(c TransmissionClient) addTorrentURL(url string, path string) (string, error
 	return hashString, nil
 }
 
-func(c TransmissionClient) addTorrent(filePath string) error {
+func(c TransmissionClient) getTorrent(link string, torrentDirectory string, title string) (string, error) {
 
-	_, err := http.NewRequest("POST", c.URL, nil)
+	resp, err := c.client.Get(link)
 	if err != nil {
-		return err
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	os.MkdirAll(torrentDirectory, 0755)
+	torrentFilename := path.Join(torrentDirectory, title + ".torrent")
+
+	out, err := os.Create(torrentFilename)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	err = os.Chmod(torrentFilename, 0644)
+	if err != nil {
+		return "", err
 	}
 
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return "", err
+	}
 
-	return nil
+	logger.Debug("Retriving torrent:\n %v\n", resp)
+
+	return torrentFilename, nil
+}
+
+func(c TransmissionClient) addTorrent(torrentPath string, path string) (string, error) {
+
+	torrentData, err := ioutil.ReadFile(torrentPath)
+	if err != nil {
+		return "", err
+	}
+
+	torrent := base64.StdEncoding.EncodeToString([]byte(torrentData))
+
+	fmt.Printf("Torrent: %v\n", torrent)
+
+	data := addTorrent{
+		Method: "torrent-add",
+		Arguments: argumentsTorrent {
+			Paused: false,
+			DownloadDir: path,
+			MetaInfo: torrent,
+		},
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", c.URL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	req.SetBasicAuth(c.Creds.Username, c.Creds.Password)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Transmission-Session-Id", c.sessionID)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var body respTorrent
+	err = json.NewDecoder(resp.Body).Decode(&body)
+	if err != nil {
+		return "", err
+	}
+
+	if body.Result != "success" {
+		return "", fmt.Errorf("Unable to add torrent: %v", body.Result)
+	}
+
+	hashString := body.Arguments.TorrentAdded.HashString
+	if len(hashString) == 0 {
+
+		hashString = body.Arguments.TorrentDuplicate.HashString
+		if len(hashString) != 0 {
+			logger.Info("Torrent from %v and hash %v duplicated", path, hashString)
+		}
+	}
+
+	return hashString, nil
 }
