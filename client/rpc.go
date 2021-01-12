@@ -6,7 +6,6 @@ import (
 	"path"
 	"io/ioutil"
 	"crypto/tls"
-	"context"
 	"golang.org/x/time/rate"
 	"sync"
 	"bytes"
@@ -22,25 +21,28 @@ import (
 	"github.com/whatust/transmission-rss/logger"
 )
 
-// Client methods to interact with the tranmission RPC server
-type Client interface {
+// RSSClient methods to interact with the tranmission RPC server
+type RSSClient interface {
 	Initialize() error
 	AddFeeds([]config.Feed, helper.SeenTorrent)
-	Do(req *http.Request) (*http.Response, error)
 }
 
 // TransmissionClient wraps client methods and sessions
 type TransmissionClient struct {
 	Creds config.Creds
 	Server config.Server
+	Connect config.Connect
 	URL string
 	sessionID string
-	client *http.Client
-	RateLimiter *rate.Limiter
+	clientRSS Client
 }
 
 // Initialize rpc client
 func(c *TransmissionClient) Initialize() error {
+
+	if c.Server.SaveTorrent {
+		os.MkdirAll(c.Server.TorrentPath, 0755)
+	}
 
 	var scheme string = "http"
 
@@ -50,7 +52,7 @@ func(c *TransmissionClient) Initialize() error {
 
 	URL := url.URL {
 		Scheme: scheme,
-		Host: c.Server.Host + ":" +strconv.Itoa(c.Server.Port),
+		Host: c.Server.Host + ":" + strconv.Itoa(c.Server.Port),
 		Path: c.Server.RPCPath,
 	}
 	c.URL = URL.String()
@@ -58,8 +60,6 @@ func(c *TransmissionClient) Initialize() error {
 	logger.Info("Initializing Server: %v\n", c.URL)
 
 	var proxy func(*http.Request) (*url.URL, error);
-
-	c.RateLimiter = rate.NewLimiter(rate.Every(350 * time.Millisecond), 2)
 
 	if len(c.Server.Proxy) != 0 {
 
@@ -71,25 +71,77 @@ func(c *TransmissionClient) Initialize() error {
 		}
 	}
 
-	c.client = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig : &tls.Config{
-				InsecureSkipVerify: !c.Server.ValidateCert,
+	c.clientRSS = &RateClient {
+		Client: &http.Client {
+			Transport: &http.Transport {
+				TLSClientConfig : &tls.Config {
+					InsecureSkipVerify: !c.Server.ValidateCert,
+				},
+				Proxy: proxy,
+				TLSHandshakeTimeout: 10 * time.Second,
 			},
-			Proxy: proxy,
-			TLSHandshakeTimeout: 10 * time.Second,
+			Timeout: time.Duration(c.Connect.Timeout) * time.Second,
 		},
-		Timeout: time.Duration(c.Server.Timeout) * time.Second,
+		RateLimiter: rate.NewLimiter(rate.Every(time.Duration(c.Server.RateTime) * time.Millisecond), 1),
 	}
 
 	sessionID, err := c.getSessionID()
 	c.sessionID = sessionID
 
-	fmt.Printf("%v\n", c.client.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify)
-
 	return err
 }
 
+// RetriveFeed ...
+func (c TransmissionClient) RetriveFeed(url string) (*Feed, error) {
+
+	logger.Info("Retriving RSS feed..")
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < c.Connect.Retries; i++ {
+
+		resp, err := c.clientRSS.Do(req)
+
+		if err != nil {
+			logger.Error("Response error: %v", err)
+			logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
+			time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
+		} else {
+			defer resp.Body.Close()
+
+			if resp.StatusCode == http.StatusOK {
+
+				data, err := ioutil.ReadAll(resp.Body)
+
+				if err != nil {
+					logger.Error("Unable to read response body.")
+					logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
+					time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
+					continue
+				}
+
+				feed, err := ParseXML(data)
+
+				if err != nil {
+					logger.Error("Unable to parse XML.")
+					logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
+					time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
+					continue
+				}
+
+				return feed, nil
+			}
+
+			logger.Error("Response Status Code(%v)\n", resp.StatusCode)
+			logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
+		}
+	}
+
+	return nil, fmt.Errorf("All retries failed could not retrieve RSS Feed")
+}
 func (c TransmissionClient) getSessionID() (string, error) {
 
 	var sessionID string
@@ -101,16 +153,18 @@ func (c TransmissionClient) getSessionID() (string, error) {
 		return "", err
 	}
 	req.SetBasicAuth(c.Creds.Username, c.Creds.Password)
+
+	fmt.Printf("Retries: %v", c.Connect.Retries)
 	
-	for i := 0; i < c.Server.Retries; i++ {
+	for i := 0; i < c.Connect.Retries; i++ {
 		logger.Info("Getting session ID")
 
-		resp, err := c.Do(req)
+		resp, err := c.clientRSS.Do(req)
 
 		if err != nil || resp.StatusCode != 409 {
 			logger.Error("Unable to get sessionID: %v", err)
-			logger.Error("Waiting %v seconds until retry\n", c.Server.WaitTime)
-			time.Sleep(time.Duration(c.Server.WaitTime) * time.Second)
+			logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
+			time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
 		} else {
 			sessionID = resp.Header.Get("X-Transmission-Session-Id")
 			break;
@@ -132,7 +186,7 @@ func (c TransmissionClient) AddFeeds(confs []config.Feed, seen helper.SeenTorren
 
 		logger.Info("Processing feed: %v\n", conf.URL)
 
-		feed, err := RetriveFeed(conf.URL)
+		feed, err := c.RetriveFeed(conf.URL)
 		if err != nil {
 			logger.Error("Could not retrieve RSS feed: %v\n", err)
 			continue
@@ -146,6 +200,33 @@ var wg = sync.WaitGroup{}
 
 // AddFeed adds all torrents that match filter to transmission
 func (c TransmissionClient) addFeed(conf config.Feed, feed *Feed, seen helper.SeenTorrent) {
+
+	var proxy func(*http.Request) (*url.URL, error);
+
+	if len(conf.Proxy) != 0 {
+
+		proxyURL, err := url.Parse(conf.Proxy)
+		if err != nil {
+			logger. Warn("Could not parse proxy address: %v", err)
+		} else  {
+			proxy = http.ProxyURL(proxyURL)
+		}
+	}
+
+	logger.Info("RateTime: %v\n", c.Connect.RateTime)
+
+	clt := RateClient {
+		Client: &http.Client{
+			Transport: &http.Transport {
+				TLSClientConfig: &tls.Config {
+					InsecureSkipVerify: !conf.ValidateCert,
+				},
+			Proxy: proxy,
+			TLSHandshakeTimeout: 10 * time.Second,
+			},
+		},
+		RateLimiter: rate.NewLimiter(rate.Every(time.Duration(c.Connect.RateTime) * time.Millisecond), 1),
+	}
 	
 	for _, matcher := range conf.Matchers {
 
@@ -160,13 +241,13 @@ func (c TransmissionClient) addFeed(conf config.Feed, feed *Feed, seen helper.Se
 		for _, item := range feed.Channel.Items {
 
 			wg.Add(1)
-			go c.processItem(item, filter, seen)
+			go c.processItem(item, filter, clt, seen)
 		}
 	}
 	wg.Wait()
 }
 
-func (c TransmissionClient) processItem(item FeedItem, filter *Filter, seen helper.SeenTorrent) {
+func (c TransmissionClient) processItem(item FeedItem, filter *Filter, clt Client, seen helper.SeenTorrent) {
 
 	defer wg.Done()
 
@@ -182,17 +263,23 @@ func (c TransmissionClient) processItem(item FeedItem, filter *Filter, seen help
 
 	if c.Server.SaveTorrent {
 
-		torrentPath, err := c.getTorrent(item.Link, c.Server.TorrentPath, item.Title)
-		if err != nil {
-			logger.Error("Unable to download torrent: %v\n", err)
-			return
+		torrentPath := path.Join(c.Server.TorrentPath, item.Title + ".torrent")
+
+		if _, err := os.Stat(torrentPath); os.IsNotExist(err) {
+
+			err := c.getTorrent(item.Link, clt, torrentPath)
+			if err != nil {
+				logger.Error("Unable to download torrent: %v\n", err)
+				return
+			}
 		}
 
-		_, err = c.addTorrent(torrentPath, filter.DownloadPath)
+		_, err := c.addTorrent(torrentPath, filter.DownloadPath)
 		if err != nil {
 			logger.Error("Unable to add torrent: %v\n", err)
 			return
 		}
+		seen.AddSeen(item.Title)
 
 	} else {
 		_, err := c.addTorrentURL(item.Link, filter.DownloadPath)
@@ -200,6 +287,7 @@ func (c TransmissionClient) processItem(item FeedItem, filter *Filter, seen help
 			logger.Error("Unable to add torrent: %v\n", err)
 			return
 		}
+		seen.AddSeen(item.Title)
 	}
 
 }
@@ -270,7 +358,7 @@ func(c TransmissionClient) addTorrentURL(url string, path string) (string, error
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Transmission-Session-Id", c.sessionID)
 
-	resp, err := c.Do(req)
+	resp, err := c.clientRSS.Do(req)
 
 	if err != nil {
 		logger.Error("Error during POST request: %v\n", err)
@@ -296,45 +384,48 @@ func(c TransmissionClient) addTorrentURL(url string, path string) (string, error
 	if len(hashString) == 0 {
 
 		hashString = body.Arguments.TorrentDuplicate.HashString
-		if len(hashString) != 0 {
+		/*if len(hashString) != 0 {
 			logger.Info("Torrent from %v and hash %v duplicated\n", url, hashString)
-		}
+		}*/
 	}
 
 	return hashString, nil
 }
 
+func(c TransmissionClient) getTorrent(link string, clt Client, torrentFilename string) error {
 
-func(c TransmissionClient) getTorrent(link string, torrentDirectory string, title string) (string, error) {
+	req, err := http.NewRequest("GET", link, nil)
+	if err!= nil {
+		logger.Error("Unable to create GET request: %v\n", err)
+		return err
+	}
 
-	resp, err := c.client.Get(link)
+	resp, err := clt.Do(req)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer resp.Body.Close()
 
-	os.MkdirAll(torrentDirectory, 0755)
-	torrentFilename := path.Join(torrentDirectory, title + ".torrent")
+	logger.Info("Response: %v\n", resp.StatusCode)
 
 	out, err := os.Create(torrentFilename)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer out.Close()
 
 	err = os.Chmod(torrentFilename, 0644)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	logger.Debug("Retriving torrent:\n %v\n", resp)
-
-	return torrentFilename, nil
+	return nil
 }
 
 func(c TransmissionClient) addTorrent(torrentPath string, path string) (string, error) {
@@ -346,12 +437,10 @@ func(c TransmissionClient) addTorrent(torrentPath string, path string) (string, 
 
 	torrent := base64.StdEncoding.EncodeToString([]byte(torrentData))
 
-	fmt.Printf("Torrent: %v\n", torrent)
-
 	data := addTorrent{
 		Method: "torrent-add",
 		Arguments: argumentsTorrent {
-			Paused: false,
+			Paused: true,
 			DownloadDir: path,
 			MetaInfo: torrent,
 		},
@@ -371,7 +460,7 @@ func(c TransmissionClient) addTorrent(torrentPath string, path string) (string, 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Transmission-Session-Id", c.sessionID)
 
-	resp, err := c.client.Do(req)
+	resp, err := c.clientRSS.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -384,7 +473,7 @@ func(c TransmissionClient) addTorrent(torrentPath string, path string) (string, 
 	}
 
 	if body.Result != "success" {
-		return "", fmt.Errorf("Unable to add torrent: %v", body.Result)
+		return "", fmt.Errorf("%v: %v", torrentPath, body.Result)
 	}
 
 	hashString := body.Arguments.TorrentAdded.HashString
@@ -392,26 +481,9 @@ func(c TransmissionClient) addTorrent(torrentPath string, path string) (string, 
 
 		hashString = body.Arguments.TorrentDuplicate.HashString
 		if len(hashString) != 0 {
-			logger.Info("Torrent from %v and hash %v duplicated", path, hashString)
+			logger.Debug("Torrent from %v and hash %v duplicated", path, hashString)
 		}
 	}
 
 	return hashString, nil
-}
-
-// Do function from http client with rate limit
-func (c TransmissionClient) Do(req *http.Request) (*http.Response, error) {
-
-	ctx := context.Background()
-	err := c.RateLimiter.Wait(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	 return resp, nil
 }

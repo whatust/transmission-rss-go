@@ -1,41 +1,12 @@
 package client
 
 import (
-	"fmt"
-	"net/http"
-	"io/ioutil"
+	//"fmt"
+	//"net/http"
+	//"io/ioutil"
 	"encoding/xml"
 	"github.com/whatust/transmission-rss/logger"
 )
-
-// RetriveFeed ...
-func RetriveFeed(url string) (*Feed, error) {
-
-	resp, err := http.Get(url)
-
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK{
-		return nil, fmt.Errorf("Network: %v", resp.StatusCode)
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return nil, err
-	}
-
-	feed, err := ParseXML(data)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return feed, nil
-}
 
 // FeedItem structure that wraps the torrent data
 type FeedItem struct {

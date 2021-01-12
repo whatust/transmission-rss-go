@@ -75,8 +75,9 @@ func main () {
 	myClient := client.TransmissionClient{
 		Server: conf.ServerConfig,
 		Creds: conf.CredsConfig,
+		Connect: conf.ConnectConfig,
 	}
-	var client client.Client = &myClient
+	var client client.RSSClient = &myClient
 	
 	err = client.Initialize()
 	if err != nil {
@@ -106,7 +107,7 @@ func main () {
 	for true {
 
 		// Populate torrent from the feed list
-		client.AddFeeds(feedConfig.Feeds, seenTorrent)
+		client.AddFeeds(feedConfig.Feeds, &seenTorrent)
 
 		// Save updates to seen torrents file
 		err = seenTorrent.SaveSeen(conf.SeenFile)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"bufio"
 	"os"
+	"sync"
 )
 
 // SeenTorrent ...
@@ -16,12 +17,13 @@ type SeenTorrent interface {
 
 // SeenSet ...
 type SeenSet struct {
+	mu sync.RWMutex
 	New map[string]struct{}
 	Old map[string]struct{}
 }
 
 // LoadSeen ...
-func (set SeenSet) LoadSeen(fileName string) error {
+func (set *SeenSet) LoadSeen(fileName string) error {
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -41,7 +43,9 @@ func (set SeenSet) LoadSeen(fileName string) error {
 }
 
 // SaveSeen ...
-func (set SeenSet) SaveSeen(fileName string) error {
+func (set *SeenSet) SaveSeen(fileName string) error {
+
+	fmt.Println("Saving seen torrents...")
 
 	file, err := os.OpenFile(
 		fileName, 
@@ -65,24 +69,28 @@ func (set SeenSet) SaveSeen(fileName string) error {
 }
 
 // Contain ...
-func (set SeenSet) Contain (uID string) bool {
+func (set *SeenSet) Contain (uID string) bool {
 
 	_, in := set.Old[uID]
 	if in {
 		return true
 	}
 
+	set.mu.RLock()
 	_, in = set.New[uID]
+	set.mu.RUnlock()
 
 	return in
 }
 
 // AddSeen ...
-func (set SeenSet) AddSeen (uID string) {
+func (set *SeenSet) AddSeen (uID string) {
 
 	var aux struct{}
 
 	if !set.Contain(uID) {
+		set.mu.Lock()
 		set.New[uID] = aux
+		set.mu.Unlock()
 	}
 }

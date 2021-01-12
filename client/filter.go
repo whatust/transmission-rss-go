@@ -11,24 +11,22 @@ import (
 type Filter struct{
 	RegExp *regexp.Regexp
 	DownloadPath string
-	ValidateCert bool
 	IgnoreRemake bool
 	OnlyTrusted bool
 }
 
 // CreateFilter creates filter to match torrent
-func CreateFilter(matcher config.Matcher, def config.Feed) (*Filter, error) {
+func CreateFilter(matcher config.Matcher, conf config.Feed) (*Filter, error) {
 
     filter := Filter {
         RegExp: regexp.MustCompile(matcher.RegExp),
         DownloadPath: matcher.DownloadPath,
-        ValidateCert: matcher.ValidateCert,
         IgnoreRemake: matcher.IgnoreRemake,
         OnlyTrusted: matcher.OnlyTrusted,
     }
 
     if len(filter.DownloadPath) == 0 {
-        filter.DownloadPath = def.DefaultDownloadPath
+        filter.DownloadPath = conf.DefaultDownloadPath
     }
 
     if len(filter.DownloadPath) == 0 {

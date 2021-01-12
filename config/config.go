@@ -11,14 +11,20 @@ type Server struct {
 	Port int					`yaml:"port"`
 	TLS bool					`yaml:"tls"`
 	RPCPath string				`yaml:"rpcPath"`
-	Retries int					`yaml:"retries"`
-	WaitTime int				`yaml:"waitTime"`
 	Proxy string				`yaml:"proxy"`
 	ProxyPort string			`yaml:"proxyPort"`
 	ValidateCert bool			`yaml:"validateCert" default:"true"`
-	Timeout int					`yaml:"timeout" default:"10"`
 	SaveTorrent bool			`yaml:"saveTorrent" default:"false"`
 	TorrentPath string			`yaml:"torrentPath"`
+	RateTime int				`yaml:"rateTime" default:"500"`
+}
+
+// Connect struct used to parse yaml file
+type Connect struct {
+	Retries int					`yaml:"retries" default:"10"`
+	WaitTime int				`yaml:"waitTime" default:"3"`
+	Timeout int					`yaml:"timeout" default:"10"`
+	RateTime int				`yaml:"rateTime" default:"500"`
 }
 
 // Log struct used to parse yaml file
@@ -44,6 +50,7 @@ type Config struct {
 	ServerConfig Server			`yaml:"server"`
 	LogConfig Log				`yaml:"log"`
 	CredsConfig Creds			`yaml:"login"`
+	ConnectConfig Connect		`yaml:"connection"`
 	SeenFile string				`yaml:"seenFile"`
 	RSSFile string				`yaml:"rssFile"`
 	UIDType string				`yaml:"uID"`
@@ -74,7 +81,6 @@ func GetConfig(configFilename string) (*Config, error) {
 type Matcher struct {
 	RegExp string				`yaml:"regexp"`
 	DownloadPath string			`yaml:"downloadPath"`
-	ValidateCert bool			`yaml:"validateCert"`
 	IgnoreRemake bool			`yaml:"ignoreRemake"`
 	OnlyTrusted bool			`yaml:"onlyTrusted"`
 }
@@ -87,6 +93,8 @@ type Feed struct {
 	DefaultValidateCert string	`yaml:"defaultValidateCert"`
 	SeedRatioLimit int			`yaml:"seedRationLimit"`
 	Matchers []Matcher			`yaml:"matchers"`
+	Proxy string				`xml:"proxy"`
+	ValidateCert bool			`xml:"validateCert"`
 }
 
 // FeedConfig struct used to parse yaml file
