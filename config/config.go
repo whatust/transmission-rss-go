@@ -16,7 +16,7 @@ type Server struct {
 	ValidateCert bool			`yaml:"validateCert" default:"true"`
 	SaveTorrent bool			`yaml:"saveTorrent" default:"false"`
 	TorrentPath string			`yaml:"torrentPath"`
-	RateTime int				`yaml:"rateTime" default:"500"`
+	RateTime int				`yaml:"rateTime" default:"600"`
 }
 
 // Connect struct used to parse yaml file
@@ -24,7 +24,7 @@ type Connect struct {
 	Retries int					`yaml:"retries" default:"10"`
 	WaitTime int				`yaml:"waitTime" default:"3"`
 	Timeout int					`yaml:"timeout" default:"10"`
-	RateTime int				`yaml:"rateTime" default:"500"`
+	RateTime int				`yaml:"rateTime" default:"600"`
 }
 
 // Log struct used to parse yaml file

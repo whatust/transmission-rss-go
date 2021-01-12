@@ -408,6 +408,10 @@ func(c TransmissionClient) getTorrent(link string, clt Client, torrentFilename s
 
 	logger.Info("Response: %v\n", resp.StatusCode)
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Status code different from 200 (%v)", resp.StatusCode)
+	}
+
 	out, err := os.Create(torrentFilename)
 	if err != nil {
 		return err
