@@ -60,7 +60,7 @@ func main () {
 	}
 
 	// Configure logger
-	logger.ConfigLogger(conf.LogConfig)
+	logger.ConfigLogger(conf.Log)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not configure log layer: %v\n", err)
 		os.Exit(1)
@@ -72,14 +72,10 @@ func main () {
 	}
 
 	// Create transmission client
-	myClient := client.TransmissionClient{
-		Server: conf.ServerConfig,
-		Creds: conf.CredsConfig,
-		Connect: conf.ConnectConfig,
-	}
+	myClient := client.TransmissionClient{}
 	var client client.RSSClient = &myClient
 	
-	err = client.Initialize()
+	err = client.Initialize(conf)
 	if err != nil {
 		logger.Error("Could not initialize RPC client: %v", err)
 		os.Exit(1)

@@ -1,9 +1,13 @@
 package client
 
 import (
-	"net/http"
 	"context"
+	"crypto/tls"
 	"golang.org/x/time/rate"
+	"net/http"
+	"net/url"
+	"time"
+	"github.com/whatust/transmission-rss/logger"
 )
 
 // RateClient ...
@@ -32,4 +36,36 @@ func (c RateClient) Do(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	 return resp, nil
+}
+
+// NewRateClient ...
+func NewRateClient(proxyAddr string, validateCert bool, timeout int, rateTime int) *RateClient { 
+
+	var proxy func(*http.Request) (*url.URL, error);
+
+	if len(proxyAddr) != 0 {
+
+		proxyURL, err := url.Parse(proxyAddr)
+		if err != nil {
+			logger.Warn("Could not parse proxy address: %v", err)
+		} else {
+			proxy = http.ProxyURL(proxyURL)
+		}
+	}
+
+	client := &RateClient {
+			Client: &http.Client {
+				Transport: &http.Transport {
+					TLSClientConfig : &tls.Config {
+						InsecureSkipVerify: !validateCert,
+					},
+					Proxy: proxy,
+					TLSHandshakeTimeout: 10 * time.Second,
+				},
+				Timeout: time.Duration(timeout) * time.Second,
+			},
+			RateLimiter: rate.NewLimiter(rate.Every(time.Duration(rateTime) * time.Millisecond), 1),
+		}
+
+	return client
 }
