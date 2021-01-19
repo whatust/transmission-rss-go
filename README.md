@@ -1,7 +1,7 @@
 transmission-rss
 ================
 
-<p align="right">
+<p align="center">
 </a>
 <a href="https://travis-ci.com/whatust/transmission-rss-go"><img src="https://travis-ci.com/whatust/transmission-rss-go.svg?branch=main"></a>
 </p>
