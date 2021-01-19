@@ -4,56 +4,56 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"github.com/whatust/transmission-rss/logger"
 	"io"
 	"io/ioutil"
-	"os"
-	"fmt"
 	"net/http"
-	"github.com/whatust/transmission-rss/logger"
+	"os"
 )
 
 type argumentsURL struct {
-	Paused bool				`json:"paused"`
-	DownloadDir string		`json:"download-dir"`
-	Filename string			`json:"filename"`
+	Paused      bool   `json:"paused"`
+	DownloadDir string `json:"download-dir"`
+	Filename    string `json:"filename"`
 }
 
 type argumentsTorrent struct {
-	Paused bool				`json:"paused"`
-	DownloadDir string		`json:"download-dir"`
-	MetaInfo string			`json:"metainfo"`
+	Paused      bool   `json:"paused"`
+	DownloadDir string `json:"download-dir"`
+	MetaInfo    string `json:"metainfo"`
 }
 
 type addURL struct {
-	Method string				`json:"method"`
-	Arguments argumentsURL		`json:"arguments"`
+	Method    string       `json:"method"`
+	Arguments argumentsURL `json:"arguments"`
 }
 
 type addFile struct {
-	Method string				`json:"method"`
-	Arguments argumentsTorrent	`json:"arguments"`
+	Method    string           `json:"method"`
+	Arguments argumentsTorrent `json:"arguments"`
 }
 
 type respTorrent struct {
-	Arguments struct{
+	Arguments struct {
 		TorrentAdded struct {
-			ID int				`json:"id"`
-			HashString string	`json:"hashString"`
-			Name string			`json:"name"`
-		} 						`json:"torrent-added"`
+			ID         int    `json:"id"`
+			HashString string `json:"hashString"`
+			Name       string `json:"name"`
+		} `json:"torrent-added"`
 		TorrentDuplicate struct {
-			ID int				`json:"id"`
-			HashString string	`json:"hashString"`
-			Name string			`json:"name"`
-		} 						`json:"torrent-duplicate"`
-	}							`json:"arguments"`
-	Result string				`json:"result"`
+			ID         int    `json:"id"`
+			HashString string `json:"hashString"`
+			Name       string `json:"name"`
+		} `json:"torrent-duplicate"`
+	} `json:"arguments"`
+	Result string `json:"result"`
 }
 
 func getTorrent(link string, clt Client, torrentFilename string) error {
 
 	req, err := http.NewRequest("GET", link, nil)
-	if err!= nil {
+	if err != nil {
 		logger.Error("Unable to create GET request: %v\n", err)
 		return err
 	}
@@ -95,10 +95,10 @@ func addTorrentURL(url string, client *RPCClient, path string) (string, error) {
 
 	data := addURL{
 		Method: "torrent-add",
-		Arguments: argumentsURL {
-			Paused: true,
+		Arguments: argumentsURL{
+			Paused:      true,
 			DownloadDir: path,
-			Filename: url,
+			Filename:    url,
 		},
 	}
 
@@ -164,10 +164,10 @@ func addTorrent(torrentPath string, client *RPCClient, path string) (string, err
 
 	data := addFile{
 		Method: "torrent-add",
-		Arguments: argumentsTorrent {
-			Paused: true,
+		Arguments: argumentsTorrent{
+			Paused:      true,
 			DownloadDir: path,
-			MetaInfo: torrent,
+			MetaInfo:    torrent,
 		},
 	}
 

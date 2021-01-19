@@ -19,16 +19,16 @@ type Filter struct {
 // CreateFilter creates filter to match torrent
 func CreateFilter(matcher config.Matcher, conf config.Feed) (*Filter, error) {
 
-    filter := Filter {
-        RegExp: regexp.MustCompile(matcher.RegExp),
-        DownloadPath: matcher.DownloadPath,
-        IgnoreRemake: matcher.IgnoreRemake,
-        OnlyTrusted: matcher.OnlyTrusted,
-    }
+	filter := Filter{
+		RegExp:       regexp.MustCompile(matcher.RegExp),
+		DownloadPath: matcher.DownloadPath,
+		IgnoreRemake: matcher.IgnoreRemake,
+		OnlyTrusted:  matcher.OnlyTrusted,
+	}
 
-    if len(filter.DownloadPath) == 0 {
-        filter.DownloadPath = conf.DefaultDownloadPath
-    }
+	if len(filter.DownloadPath) == 0 {
+		filter.DownloadPath = conf.DefaultDownloadPath
+	}
 	if len(filter.DownloadPath) == 0 {
 		return nil, fmt.Errorf("Download path must be set")
 	}

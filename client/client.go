@@ -13,7 +13,7 @@ import (
 
 // RateClient ...
 type RateClient struct {
-	Client *http.Client
+	Client      *http.Client
 	RateLimiter *rate.Limiter
 }
 
@@ -36,13 +36,13 @@ func (c RateClient) Do(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	 return resp, nil
+	return resp, nil
 }
 
 // NewRateClient ...
-func NewRateClient(proxyAddr string, validateCert bool, timeout int, rateTime int) *RateClient { 
+func NewRateClient(proxyAddr string, validateCert bool, timeout int, rateTime int) *RateClient {
 
-	var proxy func(*http.Request) (*url.URL, error);
+	var proxy func(*http.Request) (*url.URL, error)
 
 	if len(proxyAddr) != 0 {
 
@@ -54,18 +54,18 @@ func NewRateClient(proxyAddr string, validateCert bool, timeout int, rateTime in
 		}
 	}
 
-	client := &RateClient {
-			Client: &http.Client {
-				Transport: &http.Transport {
-					TLSClientConfig : &tls.Config {
-						InsecureSkipVerify: !validateCert,
-					},
-					Proxy: proxy,
+	client := &RateClient{
+		Client: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: !validateCert,
 				},
-				Timeout: time.Duration(timeout) * time.Second,
+				Proxy: proxy,
 			},
-			RateLimiter: rate.NewLimiter(rate.Every(time.Duration(rateTime) * time.Millisecond), 1),
-		}
+			Timeout: time.Duration(timeout) * time.Second,
+		},
+		RateLimiter: rate.NewLimiter(rate.Every(time.Duration(rateTime)*time.Millisecond), 1),
+	}
 
 	return client
 }

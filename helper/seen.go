@@ -17,7 +17,7 @@ type SeenTorrent interface {
 
 // SeenSet ...
 type SeenSet struct {
-	mu sync.RWMutex
+	mu  sync.RWMutex
 	New map[string]struct{}
 	Old map[string]struct{}
 }
@@ -69,7 +69,7 @@ func (set *SeenSet) SaveSeen(fileName string) error {
 }
 
 // Contain ...
-func (set *SeenSet) Contain (uID string) bool {
+func (set *SeenSet) Contain(uID string) bool {
 
 	_, in := set.Old[uID]
 	if in {
@@ -84,7 +84,7 @@ func (set *SeenSet) Contain (uID string) bool {
 }
 
 // AddSeen ...
-func (set *SeenSet) AddSeen (uID string) {
+func (set *SeenSet) AddSeen(uID string) {
 
 	var aux struct{}
 

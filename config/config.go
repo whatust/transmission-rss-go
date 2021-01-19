@@ -8,22 +8,22 @@ import (
 
 // Server struct used to parse yaml file
 type Server struct {
-	Host string					`yaml:"host"`
-	Port int					`yaml:"port"`
-	TLS bool					`yaml:"tls"`
-	RateTime int				`yaml:"rateTime"`
-	RPCPath string				`yaml:"rpcPath"`
-	Proxy string				`yaml:"proxy"`
-	ProxyPort string			`yaml:"proxyPort"`
-	ValidateCert bool			`yaml:"validateCert"`
+	Host         string `yaml:"host"`
+	Port         int    `yaml:"port"`
+	TLS          bool   `yaml:"tls"`
+	RateTime     int    `yaml:"rateTime"`
+	RPCPath      string `yaml:"rpcPath"`
+	Proxy        string `yaml:"proxy"`
+	ProxyPort    string `yaml:"proxyPort"`
+	ValidateCert bool   `yaml:"validateCert"`
 }
 
 // Connect struct used to parse yaml file
 type Connect struct {
-	Retries int					`yaml:"retries"`
-	WaitTime int				`yaml:"waitTime"`
-	Timeout int					`yaml:"timeout"`
-	RateTime int				`yaml:"rateTime"`
+	Retries  int `yaml:"retries"`
+	WaitTime int `yaml:"waitTime"`
+	Timeout  int `yaml:"timeout"`
+	RateTime int `yaml:"rateTime"`
 }
 
 // Log struct used to parse yaml file
@@ -46,43 +46,43 @@ type Creds struct {
 
 // Config struct used to parse yaml file
 type Config struct {
-	Server Server				`yaml:"server"`
-	Log Log						`yaml:"log"`
-	Creds Creds					`yaml:"login"`
-	Connect Connect				`yaml:"connection"`
-	SeenFile string				`yaml:"seenFile"`
-	RSSFile string				`yaml:"rssFile"`
-	UIDType string				`yaml:"uID"`
-	SaveTorrent bool			`yaml:"saveTorrent"`
-	TorrentPath string			`yaml:"torrentPath"`
+	Server      Server  `yaml:"server"`
+	Log         Log     `yaml:"log"`
+	Creds       Creds   `yaml:"login"`
+	Connect     Connect `yaml:"connection"`
+	SeenFile    string  `yaml:"seenFile"`
+	RSSFile     string  `yaml:"rssFile"`
+	UIDType     string  `yaml:"uID"`
+	SaveTorrent bool    `yaml:"saveTorrent"`
+	TorrentPath string  `yaml:"torrentPath"`
 }
 
 // NewConfig ...
 func NewConfig() Config {
 
-	config := Config {
+	config := Config{
 		Server: Server{
-			RateTime: 600,
+			RateTime:     600,
 			ValidateCert: true,
-			RPCPath: "/transmission/rpc",
-			Port: 9091,
+			RPCPath:      "/transmission/rpc",
+			Port:         9091,
 		},
 		Connect: Connect{
-			Retries: 10,
+			Retries:  10,
 			WaitTime: 5,
-			Timeout: 10,
+			Timeout:  10,
 			RateTime: 600,
 		},
 		Log: Log{
-			Level: "Info",
-			MaxSize: 10000,
+			Level:      "Info",
+			MaxSize:    10000,
 			MaxBackups: 1,
-			MaxAge: 10,
-			LocalTime: true,
-			Formatter: "JSON",
+			MaxAge:     10,
+			LocalTime:  true,
+			Formatter:  "JSON",
 		},
 		SeenFile: "/etc/transmission-rss-seen.log",
-		RSSFile: "/etc/transmission-rss-feeds.yml",
+		RSSFile:  "/etc/transmission-rss-feeds.yml",
 	}
 	return config
 }
@@ -110,22 +110,22 @@ func GetConfig(configFilename string) (*Config, error) {
 
 // Matcher struct used to parse yaml file
 type Matcher struct {
-	RegExp string				`yaml:"regexp"`
-	DownloadPath string			`yaml:"downloadPath"`
-	IgnoreRemake bool			`yaml:"ignoreRemake"`
-	OnlyTrusted bool			`yaml:"onlyTrusted"`
+	RegExp       string `yaml:"regexp"`
+	DownloadPath string `yaml:"downloadPath"`
+	IgnoreRemake bool   `yaml:"ignoreRemake"`
+	OnlyTrusted  bool   `yaml:"onlyTrusted"`
 }
 
 // Feed strcut used to parse yaml file
 type Feed struct {
-	URL string 					`yaml:"url"`
-	DefaultDownloadPath string	`yaml:"defaultDownloadPath"`
-	DefaultIgnoreRemake string	`yaml:"defaultIgnoreRemake"`
-	DefaultValidateCert string	`yaml:"defaultValidateCert"`
-	SeedRatioLimit int			`yaml:"seedRationLimit"`
-	Matchers []Matcher			`yaml:"matchers"`
-	Proxy string				`yaml:"proxy"`
-	ValidateCert bool			`yaml:"validateCert"`
+	URL                 string    `yaml:"url"`
+	DefaultDownloadPath string    `yaml:"defaultDownloadPath"`
+	DefaultIgnoreRemake string    `yaml:"defaultIgnoreRemake"`
+	DefaultValidateCert string    `yaml:"defaultValidateCert"`
+	SeedRatioLimit      int       `yaml:"seedRationLimit"`
+	Matchers            []Matcher `yaml:"matchers"`
+	Proxy               string    `yaml:"proxy"`
+	ValidateCert        bool      `yaml:"validateCert"`
 }
 
 // FeedConfig struct used to parse yaml file

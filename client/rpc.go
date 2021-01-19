@@ -24,21 +24,21 @@ type RSSClient interface {
 
 // RPCClient ...
 type RPCClient struct {
-	URL string
+	URL       string
 	SessionID string
-	Creds config.Creds
-	Client Client
+	Creds     config.Creds
+	Client    Client
 }
 
 // TransmissionClient wraps client methods and sessions
 type TransmissionClient struct {
-	RPCClient RPCClient
+	RPCClient      RPCClient
 	ConnectionConf config.Connect
-	TorrentPath string
+	TorrentPath    string
 }
 
 // Initialize rpc client
-func(c *TransmissionClient) Initialize(conf *config.Config) error {
+func (c *TransmissionClient) Initialize(conf *config.Config) error {
 
 	if conf.SaveTorrent {
 		os.MkdirAll(conf.TorrentPath, 0755)
@@ -52,15 +52,15 @@ func(c *TransmissionClient) Initialize(conf *config.Config) error {
 
 	URL := url.URL{
 		Scheme: scheme,
-		Host: conf.Server.Host + ":" + strconv.Itoa(conf.Server.Port),
-		Path: conf.Server.RPCPath,
+		Host:   conf.Server.Host + ":" + strconv.Itoa(conf.Server.Port),
+		Path:   conf.Server.RPCPath,
 	}
 	c.RPCClient.URL = URL.String()
 
 	logger.Info("Initializing Server: %v\n", c.RPCClient.URL)
 
 	c.RPCClient.Client = NewRateClient(
-		conf.Server.Proxy, 
+		conf.Server.Proxy,
 		conf.Server.ValidateCert,
 		conf.Connect.Timeout,
 		conf.Server.RateTime,
@@ -225,7 +225,7 @@ func (c TransmissionClient) processItem(item FeedItem, filter *Filter, client *R
 
 	if len(c.TorrentPath) != 0 {
 
-		torrentPath := path.Join(c.TorrentPath, item.Title + ".torrent")
+		torrentPath := path.Join(c.TorrentPath, item.Title+".torrent")
 
 		if _, err := os.Stat(torrentPath); os.IsNotExist(err) {
 
