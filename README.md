@@ -4,6 +4,7 @@ transmission-rss
 <p align="center">
 </a>
 <a href="https://travis-ci.com/whatust/transmission-rss-go"><img src="https://travis-ci.com/whatust/transmission-rss-go.svg?branch=main"></a>
+<a href="https://goreportcard.com/badge/github.com/whatust/transmission-rss-go"><img src="https://goreportcard.com/badge/github.com/whatust/transmission-rss-go"></a>
 </p>
 
 Installation
