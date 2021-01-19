@@ -2,16 +2,16 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"github.com/akamensky/argparse"
-	"github.com/whatust/transmission-rss/logger"
-	"github.com/whatust/transmission-rss/helper"
-	"github.com/whatust/transmission-rss/config"
 	"github.com/whatust/transmission-rss/client"
+	"github.com/whatust/transmission-rss/config"
+	"github.com/whatust/transmission-rss/helper"
+	"github.com/whatust/transmission-rss/logger"
+	"os"
 )
 
 // Logger pointer to the logger object
-func main () {
+func main() {
 
 	parser := argparse.NewParser(
 		"transmission-rss",
@@ -23,7 +23,7 @@ func main () {
 		"config",
 		&argparse.Options{
 			Required: true,
-			Help: "Path to the config YAML file used for transmission client.",
+			Help:     "Path to the config YAML file used for transmission client.",
 		},
 	)
 	dry := parser.Flag(
@@ -31,7 +31,7 @@ func main () {
 		"dry-run",
 		&argparse.Options{
 			Required: false,
-			Help: "Prints out the added torrent files without send it to the RPC client.",
+			Help:     "Prints out the added torrent files without send it to the RPC client.",
 		},
 	)
 
@@ -58,10 +58,10 @@ func main () {
 	// Create transmission client
 	myClient := client.TransmissionClient{
 		Server: conf.ServerConfig,
-		Creds: conf.CredsConfig,
+		Creds:  conf.CredsConfig,
 	}
-	var client client.Client = & myClient
-	
+	var client client.Client = &myClient
+
 	err = client.Initialize()
 	if err != nil {
 		logger.Error("Could not initialize RPC client: %v", err)

@@ -1,8 +1,8 @@
 package helper
 
 import (
-	"fmt"
 	"bufio"
+	"fmt"
 	"os"
 )
 
@@ -44,7 +44,7 @@ func (set SeenSet) LoadSeen(fileName string) error {
 func (set SeenSet) SaveSeen(fileName string) error {
 
 	file, err := os.OpenFile(
-		fileName, 
+		fileName,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0644,
 	)
@@ -65,7 +65,7 @@ func (set SeenSet) SaveSeen(fileName string) error {
 }
 
 // Contain ...
-func (set SeenSet) Contain (uID string) bool {
+func (set SeenSet) Contain(uID string) bool {
 
 	_, in := set.Old[uID]
 	if in {
@@ -78,7 +78,7 @@ func (set SeenSet) Contain (uID string) bool {
 }
 
 // AddSeen ...
-func (set SeenSet) AddSeen (uID string) {
+func (set SeenSet) AddSeen(uID string) {
 
 	var aux struct{}
 

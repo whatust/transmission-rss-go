@@ -3,15 +3,15 @@ package client
 import (
 	//"io/ioutil"
 	"bytes"
-	"fmt"
-	"time"
-	"strconv"
-	"net/url"
-	"net/http"
 	"encoding/json"
+	"fmt"
 	"github.com/whatust/transmission-rss/config"
 	"github.com/whatust/transmission-rss/helper"
 	"github.com/whatust/transmission-rss/logger"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
 )
 
 // Client methods to interact with the tranmission RPC server
@@ -22,15 +22,15 @@ type Client interface {
 
 // TransmissionClient wraps client methods and sessions
 type TransmissionClient struct {
-	Creds config.Creds
-	Server config.Server
-	URL string
+	Creds     config.Creds
+	Server    config.Server
+	URL       string
 	sessionID string
-	client *http.Client
+	client    *http.Client
 }
 
 // Initialize rpc client
-func(c *TransmissionClient) Initialize() error {
+func (c *TransmissionClient) Initialize() error {
 
 	var scheme string = "http"
 
@@ -38,10 +38,10 @@ func(c *TransmissionClient) Initialize() error {
 		scheme = scheme + "s"
 	}
 
-	URL := url.URL {
+	URL := url.URL{
 		Scheme: scheme,
-		Host: c.Server.Host + ":" +strconv.Itoa(c.Server.Port),
-		Path: c.Server.RPCPath,
+		Host:   c.Server.Host + ":" + strconv.Itoa(c.Server.Port),
+		Path:   c.Server.RPCPath,
 	}
 	c.URL = URL.String()
 
@@ -73,7 +73,7 @@ func (c TransmissionClient) getSessionID() (string, error) {
 		return "", err
 	}
 	req.SetBasicAuth(c.Creds.Username, c.Creds.Password)
-	
+
 	for i := 0; i < c.Server.Retries; i++ {
 
 		resp, err := c.client.Do(req)
@@ -84,7 +84,7 @@ func (c TransmissionClient) getSessionID() (string, error) {
 			time.Sleep(time.Duration(c.Server.WaitTime) * time.Second)
 		} else {
 			sessionID = resp.Header.Get("X-Transmission-Session-Id")
-			break;
+			break
 		}
 	}
 
@@ -156,41 +156,41 @@ func (c TransmissionClient) addFeed(feed []FeedItem, filter *Filter, seenTorrent
 }
 
 type arguments struct {
-	Paused bool				`json:"paused"`
-	DownloadDir string		`json:"download-dir"`
-	Filename string			`json:"filename"`
+	Paused      bool   `json:"paused"`
+	DownloadDir string `json:"download-dir"`
+	Filename    string `json:"filename"`
 }
 
 type addTorrent struct {
-	Method string				`json:"method"`
-	Arguments arguments			`json:"arguments"`
+	Method    string    `json:"method"`
+	Arguments arguments `json:"arguments"`
 }
 
 type respTorrent struct {
-	Arguments struct{
+	Arguments struct {
 		TorrentAdded struct {
-			ID int				`json:"id"`
-			HashString string	`json:"hashString"`
-			Name string			`json:"name"`
-		} 						`json:"torrent-added"`
+			ID         int    `json:"id"`
+			HashString string `json:"hashString"`
+			Name       string `json:"name"`
+		} `json:"torrent-added"`
 		TorrentDuplicate struct {
-			ID int				`json:"id"`
-			HashString string	`json:"hashString"`
-			Name string			`json:"name"`
-		} 						`json:"torrent-duplicate"`
-	}							`json:"arguments"`
-	Result string				`json:"result"`
+			ID         int    `json:"id"`
+			HashString string `json:"hashString"`
+			Name       string `json:"name"`
+		} `json:"torrent-duplicate"`
+	} `json:"arguments"`
+	Result string `json:"result"`
 }
 
 // AddTorrentURL adds a torrent to transmission server from an URL
-func(c TransmissionClient) addTorrentURL(url string, path string) (string, error) {
+func (c TransmissionClient) addTorrentURL(url string, path string) (string, error) {
 
 	data := addTorrent{
 		Method: "torrent-add",
-		Arguments: arguments {
-			Paused: false,
+		Arguments: arguments{
+			Paused:      false,
 			DownloadDir: path,
-			Filename: url,
+			Filename:    url,
 		},
 	}
 
@@ -238,13 +238,12 @@ func(c TransmissionClient) addTorrentURL(url string, path string) (string, error
 	return hashString, nil
 }
 
-func(c TransmissionClient) addTorrent(filePath string) error {
+func (c TransmissionClient) addTorrent(filePath string) error {
 
 	_, err := http.NewRequest("POST", c.URL, nil)
 	if err != nil {
 		return err
 	}
-
 
 	return nil
 }

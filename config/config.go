@@ -7,42 +7,42 @@ import (
 
 // Server struct used to parse yaml file
 type Server struct {
-	Host string					`yaml:"host"`
-	Port int					`yaml:"port"`
-	TLS bool					`yaml:"tls"`
-	RPCPath string				`yaml:"rpcPath"`
-	Retries int					`yaml:"retries"`
-	WaitTime int				`yaml:"waitTime"`
-	Proxy string				`yaml:"proxy"`
-	ProxyPort string			`yaml:"proxyPort"`
+	Host      string `yaml:"host"`
+	Port      int    `yaml:"port"`
+	TLS       bool   `yaml:"tls"`
+	RPCPath   string `yaml:"rpcPath"`
+	Retries   int    `yaml:"retries"`
+	WaitTime  int    `yaml:"waitTime"`
+	Proxy     string `yaml:"proxy"`
+	ProxyPort string `yaml:"proxyPort"`
 }
 
 // Log struct used to parse yaml file
 type Log struct {
-	LogPath string 				`yaml:"logPath"`
-	Level string				`yaml:"level"`
-	MaxSize int					`yaml:"maxSize"`
-	MaxBackups int				`yaml:"maxBackups"`
-	MaxAge int					`yaml:"maxAge"`
-	Compress bool				`yaml:"compress"`
-	LocalTime bool				`yaml:"localTime"`
-	Formatter string			`yaml:"formatter"`
+	LogPath    string `yaml:"logPath"`
+	Level      string `yaml:"level"`
+	MaxSize    int    `yaml:"maxSize"`
+	MaxBackups int    `yaml:"maxBackups"`
+	MaxAge     int    `yaml:"maxAge"`
+	Compress   bool   `yaml:"compress"`
+	LocalTime  bool   `yaml:"localTime"`
+	Formatter  string `yaml:"formatter"`
 }
 
 // Creds struct used to parse yaml file
 type Creds struct {
-	Username string				`yaml:"username"`
-	Password string 			`yaml:"password"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 // Config struct used to parse yaml file
 type Config struct {
-	ServerConfig Server			`yaml:"server"`
-	LogConfig Log				`yaml:"log"`
-	CredsConfig Creds			`yaml:"login"`
-	SeenFile string				`yaml:"seenFile"`
-	RSSFile string				`yaml:"rssFile"`
-	UIDType string				`yaml:"uID"`
+	ServerConfig Server `yaml:"server"`
+	LogConfig    Log    `yaml:"log"`
+	CredsConfig  Creds  `yaml:"login"`
+	SeenFile     string `yaml:"seenFile"`
+	RSSFile      string `yaml:"rssFile"`
+	UIDType      string `yaml:"uID"`
 }
 
 // GetConfig parse config file for transmission-rss
@@ -68,21 +68,21 @@ func GetConfig(configFilename string) (*Config, error) {
 
 // Matcher struct used to parse yaml file
 type Matcher struct {
-	RegExp string				`yaml:"regexp"`
-	DownloadPath string			`yaml:"downloadPath"`
-	ValidateCert bool			`yaml:"validateCert"`
-	IgnoreRemake bool			`yaml:"ignoreRemake"`
-	OnlyTrusted bool			`yaml:"onlyTrusted"`
+	RegExp       string `yaml:"regexp"`
+	DownloadPath string `yaml:"downloadPath"`
+	ValidateCert bool   `yaml:"validateCert"`
+	IgnoreRemake bool   `yaml:"ignoreRemake"`
+	OnlyTrusted  bool   `yaml:"onlyTrusted"`
 }
 
 // Feed strcut used to parse yaml file
 type Feed struct {
-	URL string 					`yaml:"url"`
-	DefaultDownloadPath string	`yaml:"defaultDownloadPath"`
-	DefaultIgnoreRemake string	`yaml:"defaultIgnoreRemake"`
-	DefaultValidateCert string	`yaml:"defaultValidateCert"`
-	SeedRatioLimit int			`yaml:"seedRationLimit"`
-	Matchers []Matcher			`yaml:"matchers"`
+	URL                 string    `yaml:"url"`
+	DefaultDownloadPath string    `yaml:"defaultDownloadPath"`
+	DefaultIgnoreRemake string    `yaml:"defaultIgnoreRemake"`
+	DefaultValidateCert string    `yaml:"defaultValidateCert"`
+	SeedRatioLimit      int       `yaml:"seedRationLimit"`
+	Matchers            []Matcher `yaml:"matchers"`
 }
 
 // FeedConfig struct used to parse yaml file
