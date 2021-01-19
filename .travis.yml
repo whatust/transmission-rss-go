@@ -9,6 +9,3 @@ os:
   - linux-ppc64le
   - osx
   - windows
-
-before_install:
-  - go get -t -v ./...
