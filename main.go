@@ -1,20 +1,21 @@
 package main
 
 import (
-	"time"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
 	"github.com/akamensky/argparse"
-	"github.com/whatust/transmission-rss/logger"
-	"github.com/whatust/transmission-rss/helper"
-	"github.com/whatust/transmission-rss/config"
 	"github.com/whatust/transmission-rss/client"
+	"github.com/whatust/transmission-rss/config"
+	"github.com/whatust/transmission-rss/helper"
+	"github.com/whatust/transmission-rss/logger"
 )
 
 // Logger pointer to the logger object
-func main () {
+func main() {
 
 	parser := argparse.NewParser(
 		"transmission-rss",
@@ -26,7 +27,7 @@ func main () {
 		"config",
 		&argparse.Options{
 			Required: true,
-			Help: "Path to the config YAML file used for transmission client.",
+			Help:     "Path to the config YAML file used for transmission client.",
 		},
 	)
 	dry := parser.Flag(
@@ -34,7 +35,7 @@ func main () {
 		"dry-run",
 		&argparse.Options{
 			Required: false,
-			Help: "Prints out the added torrent files without send it to the RPC client.",
+			Help:     "Prints out the added torrent files without send it to the RPC client.",
 		},
 	)
 	daemon := parser.Flag(
@@ -42,7 +43,7 @@ func main () {
 		"daemon",
 		&argparse.Options{
 			Required: false,
-			Help: "Daemonize process.",
+			Help:     "Daemonize process.",
 		},
 	)
 
@@ -74,7 +75,7 @@ func main () {
 	// Create transmission client
 	myClient := client.TransmissionClient{}
 	var client client.RSSClient = &myClient
-	
+
 	err = client.Initialize(conf)
 	if err != nil {
 		logger.Error("Could not initialize RPC client: %v", err)

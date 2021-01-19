@@ -1,8 +1,8 @@
 package helper
 
 import (
-	"fmt"
 	"bufio"
+	"fmt"
 	"os"
 	"sync"
 )
@@ -48,7 +48,7 @@ func (set *SeenSet) SaveSeen(fileName string) error {
 	fmt.Println("Saving seen torrents...")
 
 	file, err := os.OpenFile(
-		fileName, 
+		fileName,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0644,
 	)

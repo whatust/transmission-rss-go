@@ -7,9 +7,10 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"sync"
 	"strconv"
+	"sync"
 	"time"
+
 	"github.com/whatust/transmission-rss/config"
 	"github.com/whatust/transmission-rss/helper"
 	"github.com/whatust/transmission-rss/logger"
@@ -49,7 +50,7 @@ func(c *TransmissionClient) Initialize(conf *config.Config) error {
 		scheme = scheme + "s"
 	}
 
-	URL := url.URL {
+	URL := url.URL{
 		Scheme: scheme,
 		Host: conf.Server.Host + ":" + strconv.Itoa(conf.Server.Port),
 		Path: conf.Server.RPCPath,
@@ -67,9 +68,6 @@ func(c *TransmissionClient) Initialize(conf *config.Config) error {
 
 	c.RPCClient.Creds = conf.Creds
 	c.ConnectionConf = conf.Connect
-
-	fmt.Printf("RateTime: %v", c.ConnectionConf.RateTime)
-	fmt.Printf("RateTime: %v", conf.Connect.RateTime)
 
 	sessionID, err := c.getSessionID()
 	c.RPCClient.SessionID = sessionID
@@ -140,8 +138,6 @@ func (c TransmissionClient) getSessionID() (string, error) {
 	}
 	req.SetBasicAuth(c.RPCClient.Creds.Username, c.RPCClient.Creds.Password)
 
-	fmt.Printf("Retries: %v", c.ConnectionConf.Retries)
-	
 	for i := 0; i < c.ConnectionConf.Retries; i++ {
 		logger.Info("Getting session ID")
 
@@ -153,7 +149,7 @@ func (c TransmissionClient) getSessionID() (string, error) {
 			time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
 		} else {
 			sessionID = resp.Header.Get("X-Transmission-Session-Id")
-			break;
+			break
 		}
 	}
 

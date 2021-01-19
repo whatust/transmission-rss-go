@@ -1,9 +1,9 @@
 package config
 
 import (
-	"fmt"
-	"gopkg.in/yaml.v2"
 	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Server struct used to parse yaml file
@@ -11,11 +11,11 @@ type Server struct {
 	Host string					`yaml:"host"`
 	Port int					`yaml:"port"`
 	TLS bool					`yaml:"tls"`
+	RateTime int				`yaml:"rateTime"`
 	RPCPath string				`yaml:"rpcPath"`
 	Proxy string				`yaml:"proxy"`
 	ProxyPort string			`yaml:"proxyPort"`
 	ValidateCert bool			`yaml:"validateCert"`
-	RateTime int				`yaml:"rateTime"`
 }
 
 // Connect struct used to parse yaml file
@@ -28,20 +28,20 @@ type Connect struct {
 
 // Log struct used to parse yaml file
 type Log struct {
-	LogPath string 				`yaml:"logPath"`
-	Level string				`yaml:"level"`
-	MaxSize int					`yaml:"maxSize"`
-	MaxBackups int				`yaml:"maxBackups"`
-	MaxAge int					`yaml:"maxAge"`
-	Compress bool				`yaml:"compress"`
-	LocalTime bool				`yaml:"localTime"`
-	Formatter string			`yaml:"formatter"`
+	LogPath    string `yaml:"logPath"`
+	Level      string `yaml:"level"`
+	MaxSize    int    `yaml:"maxSize"`
+	MaxBackups int    `yaml:"maxBackups"`
+	MaxAge     int    `yaml:"maxAge"`
+	Compress   bool   `yaml:"compress"`
+	LocalTime  bool   `yaml:"localTime"`
+	Formatter  string `yaml:"formatter"`
 }
 
 // Creds struct used to parse yaml file
 type Creds struct {
-	Username string				`yaml:"username"`
-	Password string 			`yaml:"password"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 // Config struct used to parse yaml file
@@ -104,10 +104,6 @@ func GetConfig(configFilename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	//fmt.Printf("Config: %v\n", config.Connect)
-	//fmt.Printf("Config: %v\n", config.Server)
-	fmt.Printf("Config: %v\n", config)
 
 	return &config, nil
 }

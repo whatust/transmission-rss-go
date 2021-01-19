@@ -1,17 +1,17 @@
 package logger
 
 import (
-	"os"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"github.com/whatust/transmission-rss/config"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"os"
 )
 
 // Hook  ...
 type Hook struct {
-	formatter	logrus.Formatter
-	logLevel	logrus.Level
-	logger		*lumberjack.Logger
+	formatter logrus.Formatter
+	logLevel  logrus.Level
+	logger    *lumberjack.Logger
 }
 
 // NewHook creates a new instance of Hook
@@ -42,15 +42,15 @@ func NewHook(opt config.Log) *Hook {
 
 	hook := Hook{
 		logger: &lumberjack.Logger{
-			Filename: 	opt.LogPath,
-			MaxSize: 	opt.MaxSize,
+			Filename:   opt.LogPath,
+			MaxSize:    opt.MaxSize,
 			MaxBackups: opt.MaxBackups,
-			MaxAge: 	opt.MaxAge,
-			Compress: 	opt.Compress,
-			LocalTime: 	opt.LocalTime,
+			MaxAge:     opt.MaxAge,
+			Compress:   opt.Compress,
+			LocalTime:  opt.LocalTime,
 		},
-		logLevel:	level,
-		formatter:	formatter,
+		logLevel:  level,
+		formatter: formatter,
 	}
 
 	return &hook
@@ -77,7 +77,7 @@ func (hook *Hook) Levels() []logrus.Level {
 
 var log *logrus.Logger
 
-func init(){
+func init() {
 	log = logrus.New()
 }
 

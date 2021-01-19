@@ -3,11 +3,12 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"golang.org/x/time/rate"
 	"net/http"
 	"net/url"
 	"time"
+
 	"github.com/whatust/transmission-rss/logger"
+	"golang.org/x/time/rate"
 )
 
 // RateClient ...
@@ -60,7 +61,6 @@ func NewRateClient(proxyAddr string, validateCert bool, timeout int, rateTime in
 						InsecureSkipVerify: !validateCert,
 					},
 					Proxy: proxy,
-					TLSHandshakeTimeout: 10 * time.Second,
 				},
 				Timeout: time.Duration(timeout) * time.Second,
 			},
