@@ -1,21 +1,15 @@
 package client
 
 import (
-	"io"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
-	"io/ioutil"
-	"crypto/tls"
-	"golang.org/x/time/rate"
 	"sync"
-	"bytes"
-	"fmt"
-	"time"
 	"strconv"
-	"net/url"
-	"net/http"
-	"encoding/json"
-	"encoding/base64"
+	"time"
 	"github.com/whatust/transmission-rss/config"
 	"github.com/whatust/transmission-rss/helper"
 	"github.com/whatust/transmission-rss/logger"
@@ -23,76 +17,68 @@ import (
 
 // RSSClient methods to interact with the tranmission RPC server
 type RSSClient interface {
-	Initialize() error
+	Initialize(*config.Config) error
 	AddFeeds([]config.Feed, helper.SeenTorrent)
+}
+
+// RPCClient ...
+type RPCClient struct {
+	URL string
+	SessionID string
+	Creds config.Creds
+	Client Client
 }
 
 // TransmissionClient wraps client methods and sessions
 type TransmissionClient struct {
-	Creds config.Creds
-	Server config.Server
-	Connect config.Connect
-	URL string
-	sessionID string
-	clientRSS Client
+	RPCClient RPCClient
+	ConnectionConf config.Connect
+	TorrentPath string
 }
 
 // Initialize rpc client
-func(c *TransmissionClient) Initialize() error {
+func(c *TransmissionClient) Initialize(conf *config.Config) error {
 
-	if c.Server.SaveTorrent {
-		os.MkdirAll(c.Server.TorrentPath, 0755)
+	if conf.SaveTorrent {
+		os.MkdirAll(conf.TorrentPath, 0755)
 	}
 
 	var scheme string = "http"
 
-	if c.Server.TLS {
+	if conf.Server.TLS {
 		scheme = scheme + "s"
 	}
 
 	URL := url.URL {
 		Scheme: scheme,
-		Host: c.Server.Host + ":" + strconv.Itoa(c.Server.Port),
-		Path: c.Server.RPCPath,
+		Host: conf.Server.Host + ":" + strconv.Itoa(conf.Server.Port),
+		Path: conf.Server.RPCPath,
 	}
-	c.URL = URL.String()
+	c.RPCClient.URL = URL.String()
 
-	logger.Info("Initializing Server: %v\n", c.URL)
+	logger.Info("Initializing Server: %v\n", c.RPCClient.URL)
 
-	var proxy func(*http.Request) (*url.URL, error);
+	c.RPCClient.Client = NewRateClient(
+		conf.Server.Proxy, 
+		conf.Server.ValidateCert,
+		conf.Connect.Timeout,
+		conf.Server.RateTime,
+	)
 
-	if len(c.Server.Proxy) != 0 {
+	c.RPCClient.Creds = conf.Creds
+	c.ConnectionConf = conf.Connect
 
-		proxyURL, err := url.Parse(c.Server.Proxy)
-		if err != nil {
-			logger.Warn("Could not parse proxy address: %v", err)
-		} else {
-			proxy = http.ProxyURL(proxyURL)
-		}
-	}
-
-	c.clientRSS = &RateClient {
-		Client: &http.Client {
-			Transport: &http.Transport {
-				TLSClientConfig : &tls.Config {
-					InsecureSkipVerify: !c.Server.ValidateCert,
-				},
-				Proxy: proxy,
-				TLSHandshakeTimeout: 10 * time.Second,
-			},
-			Timeout: time.Duration(c.Connect.Timeout) * time.Second,
-		},
-		RateLimiter: rate.NewLimiter(rate.Every(time.Duration(c.Server.RateTime) * time.Millisecond), 1),
-	}
+	fmt.Printf("RateTime: %v", c.ConnectionConf.RateTime)
+	fmt.Printf("RateTime: %v", conf.Connect.RateTime)
 
 	sessionID, err := c.getSessionID()
-	c.sessionID = sessionID
+	c.RPCClient.SessionID = sessionID
 
 	return err
 }
 
 // RetriveFeed ...
-func (c TransmissionClient) RetriveFeed(url string) (*Feed, error) {
+func (c TransmissionClient) RetriveFeed(client Client, url string) (*Feed, error) {
 
 	logger.Info("Retriving RSS feed..")
 
@@ -101,14 +87,14 @@ func (c TransmissionClient) RetriveFeed(url string) (*Feed, error) {
 		return nil, err
 	}
 
-	for i := 0; i < c.Connect.Retries; i++ {
+	for i := 0; i < c.ConnectionConf.Retries; i++ {
 
-		resp, err := c.clientRSS.Do(req)
+		resp, err := client.Do(req)
 
 		if err != nil {
 			logger.Error("Response error: %v", err)
-			logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
-			time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
+			logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
+			time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
 		} else {
 			defer resp.Body.Close()
 
@@ -118,8 +104,8 @@ func (c TransmissionClient) RetriveFeed(url string) (*Feed, error) {
 
 				if err != nil {
 					logger.Error("Unable to read response body.")
-					logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
-					time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
+					logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
+					time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
 					continue
 				}
 
@@ -127,8 +113,8 @@ func (c TransmissionClient) RetriveFeed(url string) (*Feed, error) {
 
 				if err != nil {
 					logger.Error("Unable to parse XML.")
-					logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
-					time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
+					logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
+					time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
 					continue
 				}
 
@@ -136,7 +122,7 @@ func (c TransmissionClient) RetriveFeed(url string) (*Feed, error) {
 			}
 
 			logger.Error("Response Status Code(%v)\n", resp.StatusCode)
-			logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
+			logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
 		}
 	}
 
@@ -146,25 +132,25 @@ func (c TransmissionClient) getSessionID() (string, error) {
 
 	var sessionID string
 
-	logger.Info("Getting session ID from: %v", c.URL)
+	logger.Info("Getting session ID from: %v", c.RPCClient.URL)
 
-	req, err := http.NewRequest("GET", c.URL, nil)
+	req, err := http.NewRequest("GET", c.RPCClient.URL, nil)
 	if err != nil {
 		return "", err
 	}
-	req.SetBasicAuth(c.Creds.Username, c.Creds.Password)
+	req.SetBasicAuth(c.RPCClient.Creds.Username, c.RPCClient.Creds.Password)
 
-	fmt.Printf("Retries: %v", c.Connect.Retries)
+	fmt.Printf("Retries: %v", c.ConnectionConf.Retries)
 	
-	for i := 0; i < c.Connect.Retries; i++ {
+	for i := 0; i < c.ConnectionConf.Retries; i++ {
 		logger.Info("Getting session ID")
 
-		resp, err := c.clientRSS.Do(req)
+		resp, err := c.RPCClient.Client.Do(req)
 
 		if err != nil || resp.StatusCode != 409 {
 			logger.Error("Unable to get sessionID: %v", err)
-			logger.Error("Waiting %v seconds until retry\n", c.Connect.WaitTime)
-			time.Sleep(time.Duration(c.Connect.WaitTime) * time.Second)
+			logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
+			time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
 		} else {
 			sessionID = resp.Header.Get("X-Transmission-Session-Id")
 			break;
@@ -186,48 +172,28 @@ func (c TransmissionClient) AddFeeds(confs []config.Feed, seen helper.SeenTorren
 
 		logger.Info("Processing feed: %v\n", conf.URL)
 
-		feed, err := c.RetriveFeed(conf.URL)
+		client := NewRateClient(
+			conf.Proxy,
+			conf.ValidateCert,
+			c.ConnectionConf.Timeout,
+			c.ConnectionConf.RateTime,
+		)
+
+		feed, err := c.RetriveFeed(client, conf.URL)
 		if err != nil {
 			logger.Error("Could not retrieve RSS feed: %v\n", err)
 			continue
 		}
 
-		c.addFeed(conf, feed, seen)
+		c.addFeed(conf, feed, client, seen)
 	}
 }
 
 var wg = sync.WaitGroup{}
 
 // AddFeed adds all torrents that match filter to transmission
-func (c TransmissionClient) addFeed(conf config.Feed, feed *Feed, seen helper.SeenTorrent) {
+func (c TransmissionClient) addFeed(conf config.Feed, feed *Feed, client *RateClient, seen helper.SeenTorrent) {
 
-	var proxy func(*http.Request) (*url.URL, error);
-
-	if len(conf.Proxy) != 0 {
-
-		proxyURL, err := url.Parse(conf.Proxy)
-		if err != nil {
-			logger. Warn("Could not parse proxy address: %v", err)
-		} else  {
-			proxy = http.ProxyURL(proxyURL)
-		}
-	}
-
-	logger.Info("RateTime: %v\n", c.Connect.RateTime)
-
-	clt := RateClient {
-		Client: &http.Client{
-			Transport: &http.Transport {
-				TLSClientConfig: &tls.Config {
-					InsecureSkipVerify: !conf.ValidateCert,
-				},
-			Proxy: proxy,
-			TLSHandshakeTimeout: 10 * time.Second,
-			},
-		},
-		RateLimiter: rate.NewLimiter(rate.Every(time.Duration(c.Connect.RateTime) * time.Millisecond), 1),
-	}
-	
 	for _, matcher := range conf.Matchers {
 
 		logger.Info("Processing match: %v\n", matcher.RegExp)
@@ -241,13 +207,13 @@ func (c TransmissionClient) addFeed(conf config.Feed, feed *Feed, seen helper.Se
 		for _, item := range feed.Channel.Items {
 
 			wg.Add(1)
-			go c.processItem(item, filter, clt, seen)
+			go c.processItem(item, filter, client, seen)
 		}
 	}
 	wg.Wait()
 }
 
-func (c TransmissionClient) processItem(item FeedItem, filter *Filter, clt Client, seen helper.SeenTorrent) {
+func (c TransmissionClient) processItem(item FeedItem, filter *Filter, client *RateClient, seen helper.SeenTorrent) {
 
 	defer wg.Done()
 
@@ -261,20 +227,20 @@ func (c TransmissionClient) processItem(item FeedItem, filter *Filter, clt Clien
 		return
 	}
 
-	if c.Server.SaveTorrent {
+	if len(c.TorrentPath) != 0 {
 
-		torrentPath := path.Join(c.Server.TorrentPath, item.Title + ".torrent")
+		torrentPath := path.Join(c.TorrentPath, item.Title + ".torrent")
 
 		if _, err := os.Stat(torrentPath); os.IsNotExist(err) {
 
-			err := c.getTorrent(item.Link, clt, torrentPath)
+			err := getTorrent(item.Link, client.Client, torrentPath)
 			if err != nil {
 				logger.Error("Unable to download torrent: %v\n", err)
 				return
 			}
 		}
 
-		_, err := c.addTorrent(torrentPath, filter.DownloadPath)
+		_, err := addTorrent(torrentPath, &c.RPCClient, filter.DownloadPath)
 		if err != nil {
 			logger.Error("Unable to add torrent: %v\n", err)
 			return
@@ -282,212 +248,11 @@ func (c TransmissionClient) processItem(item FeedItem, filter *Filter, clt Clien
 		seen.AddSeen(item.Title)
 
 	} else {
-		_, err := c.addTorrentURL(item.Link, filter.DownloadPath)
+		_, err := addTorrentURL(item.Link, &c.RPCClient, filter.DownloadPath)
 		if err != nil {
 			logger.Error("Unable to add torrent: %v\n", err)
 			return
 		}
 		seen.AddSeen(item.Title)
 	}
-
-}
-
-type argumentsURL struct {
-	Paused bool				`json:"paused"`
-	DownloadDir string		`json:"download-dir"`
-	Filename string			`json:"filename"`
-}
-
-type argumentsTorrent struct {
-	Paused bool				`json:"paused"`
-	DownloadDir string		`json:"download-dir"`
-	MetaInfo string			`json:"metainfo"`
-}
-
-type addURL struct {
-	Method string				`json:"method"`
-	Arguments argumentsURL		`json:"arguments"`
-}
-
-type addTorrent struct {
-	Method string				`json:"method"`
-	Arguments argumentsTorrent	`json:"arguments"`
-}
-
-type respTorrent struct {
-	Arguments struct{
-		TorrentAdded struct {
-			ID int				`json:"id"`
-			HashString string	`json:"hashString"`
-			Name string			`json:"name"`
-		} 						`json:"torrent-added"`
-		TorrentDuplicate struct {
-			ID int				`json:"id"`
-			HashString string	`json:"hashString"`
-			Name string			`json:"name"`
-		} 						`json:"torrent-duplicate"`
-	}							`json:"arguments"`
-	Result string				`json:"result"`
-}
-
-// AddTorrentURL adds a torrent to transmission server from an URL
-func(c TransmissionClient) addTorrentURL(url string, path string) (string, error) {
-
-	data := addURL{
-		Method: "torrent-add",
-		Arguments: argumentsURL {
-			Paused: true,
-			DownloadDir: path,
-			Filename: url,
-		},
-	}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		logger.Error("Unable to marshal POST JSON: %v\n", err)
-		return "", err
-	}
-
-	req, err := http.NewRequest("POST", c.URL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		logger.Error("Unable to create POST request: %v\n", err)
-		return "", err
-	}
-
-	req.SetBasicAuth(c.Creds.Username, c.Creds.Password)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Transmission-Session-Id", c.sessionID)
-
-	resp, err := c.clientRSS.Do(req)
-
-	if err != nil {
-		logger.Error("Error during POST request: %v\n", err)
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var body respTorrent
-	err = json.NewDecoder(resp.Body).Decode(&body)
-
-	if err != nil {
-		logger.Error("Unable to parse response body JSON:%v\n%v\n", err, resp.Body)
-		return "", err
-	}
-
-	if body.Result != "success" {
-		logger.Error("Unable to add torrent: %v\n", body)
-		return "", err
-	}
-
-	hashString := body.Arguments.TorrentAdded.HashString
-
-	if len(hashString) == 0 {
-
-		hashString = body.Arguments.TorrentDuplicate.HashString
-		/*if len(hashString) != 0 {
-			logger.Info("Torrent from %v and hash %v duplicated\n", url, hashString)
-		}*/
-	}
-
-	return hashString, nil
-}
-
-func(c TransmissionClient) getTorrent(link string, clt Client, torrentFilename string) error {
-
-	req, err := http.NewRequest("GET", link, nil)
-	if err!= nil {
-		logger.Error("Unable to create GET request: %v\n", err)
-		return err
-	}
-
-	resp, err := clt.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	logger.Info("Response: %v\n", resp.StatusCode)
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Status code different from 200 (%v)", resp.StatusCode)
-	}
-
-	out, err := os.Create(torrentFilename)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	err = os.Chmod(torrentFilename, 0644)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return err
-	}
-
-	logger.Debug("Retriving torrent:\n %v\n", resp)
-	return nil
-}
-
-func(c TransmissionClient) addTorrent(torrentPath string, path string) (string, error) {
-
-	torrentData, err := ioutil.ReadFile(torrentPath)
-	if err != nil {
-		return "", err
-	}
-
-	torrent := base64.StdEncoding.EncodeToString([]byte(torrentData))
-
-	data := addTorrent{
-		Method: "torrent-add",
-		Arguments: argumentsTorrent {
-			Paused: true,
-			DownloadDir: path,
-			MetaInfo: torrent,
-		},
-	}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-
-	req, err := http.NewRequest("POST", c.URL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
-	}
-
-	req.SetBasicAuth(c.Creds.Username, c.Creds.Password)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Transmission-Session-Id", c.sessionID)
-
-	resp, err := c.clientRSS.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var body respTorrent
-	err = json.NewDecoder(resp.Body).Decode(&body)
-	if err != nil {
-		return "", err
-	}
-
-	if body.Result != "success" {
-		return "", fmt.Errorf("%v: %v", torrentPath, body.Result)
-	}
-
-	hashString := body.Arguments.TorrentAdded.HashString
-	if len(hashString) == 0 {
-
-		hashString = body.Arguments.TorrentDuplicate.HashString
-		if len(hashString) != 0 {
-			logger.Debug("Torrent from %v and hash %v duplicated", path, hashString)
-		}
-	}
-
-	return hashString, nil
 }

@@ -1,7 +1,8 @@
 package config
 
 import (
-	"gopkg.in/yaml.v3"
+	"fmt"
+	"gopkg.in/yaml.v2"
 	"os"
 )
 
@@ -13,18 +14,16 @@ type Server struct {
 	RPCPath string				`yaml:"rpcPath"`
 	Proxy string				`yaml:"proxy"`
 	ProxyPort string			`yaml:"proxyPort"`
-	ValidateCert bool			`yaml:"validateCert" default:"true"`
-	SaveTorrent bool			`yaml:"saveTorrent" default:"false"`
-	TorrentPath string			`yaml:"torrentPath"`
-	RateTime int				`yaml:"rateTime" default:"600"`
+	ValidateCert bool			`yaml:"validateCert"`
+	RateTime int				`yaml:"rateTime"`
 }
 
 // Connect struct used to parse yaml file
 type Connect struct {
-	Retries int					`yaml:"retries" default:"10"`
-	WaitTime int				`yaml:"waitTime" default:"3"`
-	Timeout int					`yaml:"timeout" default:"10"`
-	RateTime int				`yaml:"rateTime" default:"600"`
+	Retries int					`yaml:"retries"`
+	WaitTime int				`yaml:"waitTime"`
+	Timeout int					`yaml:"timeout"`
+	RateTime int				`yaml:"rateTime"`
 }
 
 // Log struct used to parse yaml file
@@ -47,13 +46,45 @@ type Creds struct {
 
 // Config struct used to parse yaml file
 type Config struct {
-	ServerConfig Server			`yaml:"server"`
-	LogConfig Log				`yaml:"log"`
-	CredsConfig Creds			`yaml:"login"`
-	ConnectConfig Connect		`yaml:"connection"`
+	Server Server				`yaml:"server"`
+	Log Log						`yaml:"log"`
+	Creds Creds					`yaml:"login"`
+	Connect Connect				`yaml:"connection"`
 	SeenFile string				`yaml:"seenFile"`
 	RSSFile string				`yaml:"rssFile"`
 	UIDType string				`yaml:"uID"`
+	SaveTorrent bool			`yaml:"saveTorrent"`
+	TorrentPath string			`yaml:"torrentPath"`
+}
+
+// NewConfig ...
+func NewConfig() Config {
+
+	config := Config {
+		Server: Server{
+			RateTime: 600,
+			ValidateCert: true,
+			RPCPath: "/transmission/rpc",
+			Port: 9091,
+		},
+		Connect: Connect{
+			Retries: 10,
+			WaitTime: 5,
+			Timeout: 10,
+			RateTime: 600,
+		},
+		Log: Log{
+			Level: "Info",
+			MaxSize: 10000,
+			MaxBackups: 1,
+			MaxAge: 10,
+			LocalTime: true,
+			Formatter: "JSON",
+		},
+		SeenFile: "/etc/transmission-rss-seen.log",
+		RSSFile: "/etc/transmission-rss-feeds.yml",
+	}
+	return config
 }
 
 // GetConfig parse config file for transmission-rss
@@ -66,13 +97,17 @@ func GetConfig(configFilename string) (*Config, error) {
 	}
 	defer configFile.Close()
 
-	var config Config
+	config := NewConfig()
 	decoder := yaml.NewDecoder(configFile)
 	err = decoder.Decode(&config)
 
 	if err != nil {
 		return nil, err
 	}
+
+	//fmt.Printf("Config: %v\n", config.Connect)
+	//fmt.Printf("Config: %v\n", config.Server)
+	fmt.Printf("Config: %v\n", config)
 
 	return &config, nil
 }
@@ -93,8 +128,8 @@ type Feed struct {
 	DefaultValidateCert string	`yaml:"defaultValidateCert"`
 	SeedRatioLimit int			`yaml:"seedRationLimit"`
 	Matchers []Matcher			`yaml:"matchers"`
-	Proxy string				`xml:"proxy"`
-	ValidateCert bool			`xml:"validateCert"`
+	Proxy string				`yaml:"proxy"`
+	ValidateCert bool			`yaml:"validateCert"`
 }
 
 // FeedConfig struct used to parse yaml file
