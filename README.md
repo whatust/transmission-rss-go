@@ -1,6 +1,11 @@
 transmission-rss
 ================
 
+<p align="right">
+</a>
+<a href="https://travis-ci.com/whatust/transmission-rss-go"><img src="https://travis-ci.com/whatust/transmission-rss-go.svg?branch=main"></a>
+</p>
+
 Installation
 ------------
 
