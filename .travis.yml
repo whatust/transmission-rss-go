@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.15.6
+  - master
+
+os:
+  - linux
+  - linux-ppc64le
+  - osx
