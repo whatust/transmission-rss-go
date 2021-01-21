@@ -71,7 +71,7 @@ func NewRateClient(proxyAddr string, validateCert bool, timeout int, rateTime in
 			},
 			Timeout: time.Duration(timeout) * time.Second,
 		},
-		RateLimiter: rate.NewLimiter(rate.Every(time.Duration(rateTime)*time.Millisecond), 1),
+		RateLimiter: rate.NewLimiter(rate.Every(time.Duration(rateTime)*time.Millisecond), 3),
 	}
 
 	return client

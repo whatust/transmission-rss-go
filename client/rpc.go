@@ -35,13 +35,16 @@ type TransmissionClient struct {
 	RPCClient      RPCClient
 	ConnectionConf config.Connect
 	TorrentPath    string
+	Proxy          string
 }
 
 // Initialize rpc client
 func (c *TransmissionClient) Initialize(conf *config.Config) error {
 
-	if len(conf.TorrentPath) > 0 {
-		os.MkdirAll(conf.TorrentPath, 0755)
+	c.Proxy = conf.Proxy
+	c.TorrentPath = conf.TorrentPath
+	if len(c.TorrentPath) > 0 {
+		os.MkdirAll(c.TorrentPath, 0755)
 	}
 
 	var scheme string = "http"
@@ -170,14 +173,16 @@ func (c TransmissionClient) AddFeeds(confs []config.Feed, seen helper.SeenTorren
 	wc.Add(1)
 	go addTorrentURL(channel, &c.RPCClient, c.ConnectionConf, seen)
 
+	client := NewRateClient(
+		c.Proxy,
+		true,
+		c.ConnectionConf.Timeout,
+		c.ConnectionConf.RateTime,
+	)
+
 	for _, conf := range confs {
 
-		client := NewRateClient(
-			conf.Proxy,
-			conf.ValidateCert,
-			c.ConnectionConf.Timeout,
-			c.ConnectionConf.RateTime,
-		)
+		client.Client.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = !conf.ValidateCert
 
 		logger.Info("Retriving feed from: %v", conf.URL)
 		feed, err := c.RetriveFeed(client, conf.URL)
@@ -223,13 +228,11 @@ func (c TransmissionClient) processItem(item FeedItem, filter *Filter, channel c
 
 	if !FilterTorrent(item, filter) {
 		logger.Info("Torrent does not match filter: %v\n", item.Title)
-		time.Sleep(1*time.Second)
 		return
 	}
 
 	if seen.Contain(item.Title) {
 		logger.Info("Torrent already seen: %v\n", item.Title)
-		time.Sleep(1*time.Second)
 		return
 	}
 

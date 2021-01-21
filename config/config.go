@@ -52,9 +52,10 @@ type Config struct {
 	Connect  Connect `yaml:"connection"`
 	SeenFile string  `yaml:"seenFile"`
 	RSSFile  string  `yaml:"rssFile"`
-	UIDType  string  `yaml:"uID"`
-	//SaveTorrent bool    `yaml:"saveTorrent"`
 	TorrentPath string `yaml:"torrentPath"`
+	Proxy       string `yaml:"proxy"`
+	//UIDType  string  `yaml:"uID"`
+	//SaveTorrent bool    `yaml:"saveTorrent"`
 }
 
 // NewConfig ...
@@ -84,7 +85,7 @@ func NewConfig() Config {
 			LocalTime:  true,
 			Formatter:  "JSON",
 			Compress:   false,
-			LogPath: "/var/log/transmission-rss-log.log",
+			LogPath:    "/var/log/transmission-rss-log.log",
 		},
 		SeenFile: "/etc/transmission-rss-seen.log",
 		RSSFile:  "/etc/transmission-rss-feeds.yml",
