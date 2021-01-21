@@ -58,6 +58,7 @@ func main() {
 	conf, err := config.GetConfig(*configFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading configurations: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Configure logger
@@ -89,16 +90,20 @@ func main() {
 		New: make(map[string]struct{}),
 	}
 
-	err = seenTorrent.LoadSeen(conf.SeenFile)
-	if err != nil {
-		logger.Error("Could not load seen torrents: %v\n", err)
-	}
-
 	// Load RSS feed list
 	feedConfig, err := config.GetFeedsConfig(conf.RSSFile)
 	if err != nil {
 		logger.Error("Could not parse RSS feed list: %v", err)
 		os.Exit(1)
+	} else {
+		logger.Info("Loaded feed list")
+	}
+
+	err = seenTorrent.LoadSeen(conf.SeenFile)
+	if err != nil {
+		logger.Error("Could not load seen torrents: %v\n", err)
+	} else {
+		logger.Info("Loaded seen files")
 	}
 
 	for true {

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
+
+	"github.com/whatust/transmission-rss/logger"
 )
 
 // SeenTorrent ...
@@ -45,7 +47,7 @@ func (set *SeenSet) LoadSeen(fileName string) error {
 // SaveSeen ...
 func (set *SeenSet) SaveSeen(fileName string) error {
 
-	fmt.Println("Saving seen torrents...")
+	logger.Info("Saving seen torrents...")
 
 	file, err := os.OpenFile(
 		fileName,
@@ -58,12 +60,15 @@ func (set *SeenSet) SaveSeen(fileName string) error {
 	}
 	defer file.Close()
 
+	var aux struct{}
 	for k := range set.New {
 		_, err := fmt.Fprintln(file, k)
 		if err != nil {
 			return err
 		}
+		set.Old[k] = aux
 	}
+	set.New = make(map[string]struct{})
 
 	return nil
 }

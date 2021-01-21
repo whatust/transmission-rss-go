@@ -39,12 +39,12 @@ func CreateFilter(matcher config.Matcher, conf config.Feed) (*Filter, error) {
 // FilterTorrent ...
 func FilterTorrent(torrent FeedItem, filter *Filter) bool {
 
-	if !filter.IgnoreRemake && torrent.Remake == "Yes" {
+	if filter.IgnoreRemake && torrent.Remake == "Yes" {
 		logger.Debug("Ignoring remake: %v\n", torrent.Title)
 		return false
 	}
 
-	if filter.OnlyTrusted && torrent.Trusted == "Yes" {
+	if filter.OnlyTrusted && torrent.Trusted == "No" {
 		logger.Debug("Ignoring untrusted torrent: %v\n", torrent.Title)
 		return false
 	}

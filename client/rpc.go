@@ -40,7 +40,7 @@ type TransmissionClient struct {
 // Initialize rpc client
 func (c *TransmissionClient) Initialize(conf *config.Config) error {
 
-	if conf.SaveTorrent {
+	if len(conf.TorrentPath) > 0 {
 		os.MkdirAll(conf.TorrentPath, 0755)
 	}
 
@@ -77,8 +77,6 @@ func (c *TransmissionClient) Initialize(conf *config.Config) error {
 
 // RetriveFeed ...
 func (c TransmissionClient) RetriveFeed(client Client, url string) (*Feed, error) {
-
-	logger.Info("Retriving RSS feed..")
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -126,6 +124,7 @@ func (c TransmissionClient) RetriveFeed(client Client, url string) (*Feed, error
 
 	return nil, fmt.Errorf("All retries failed could not retrieve RSS Feed")
 }
+
 func (c TransmissionClient) getSessionID() (string, error) {
 
 	var sessionID string
@@ -139,7 +138,6 @@ func (c TransmissionClient) getSessionID() (string, error) {
 	req.SetBasicAuth(c.RPCClient.Creds.Username, c.RPCClient.Creds.Password)
 
 	for i := 0; i < c.ConnectionConf.Retries; i++ {
-		logger.Info("Getting session ID")
 
 		resp, err := c.RPCClient.Client.Do(req)
 
@@ -161,12 +159,18 @@ func (c TransmissionClient) getSessionID() (string, error) {
 	return sessionID, nil
 }
 
+var wg = sync.WaitGroup{}
+var wc = sync.WaitGroup{}
+
 // AddFeeds ...
 func (c TransmissionClient) AddFeeds(confs []config.Feed, seen helper.SeenTorrent) {
 
-	for _, conf := range confs {
+	channel := make(chan TorrentReq, 50)
 
-		logger.Info("Processing feed: %v\n", conf.URL)
+	wc.Add(1)
+	go addTorrentURL(channel, &c.RPCClient, c.ConnectionConf, seen)
+
+	for _, conf := range confs {
 
 		client := NewRateClient(
 			conf.Proxy,
@@ -175,80 +179,64 @@ func (c TransmissionClient) AddFeeds(confs []config.Feed, seen helper.SeenTorren
 			c.ConnectionConf.RateTime,
 		)
 
+		logger.Info("Retriving feed from: %v", conf.URL)
 		feed, err := c.RetriveFeed(client, conf.URL)
 		if err != nil {
 			logger.Error("Could not retrieve RSS feed: %v\n", err)
 			continue
 		}
 
-		c.addFeed(conf, feed, client, seen)
+		for _, matcher := range conf.Matchers {
+
+			logger.Info("Processing match: %v\n", matcher.RegExp)
+
+			filter, err := CreateFilter(matcher, conf)
+			if err != nil {
+				logger.Error("Error while creating torrent filter: %v\n", err)
+				continue
+			}
+
+			for _, item := range feed.Channel.Items {
+
+				wg.Add(1)
+				go c.processItem(item, filter, channel, seen)
+			}
+		}
+		wg.Wait()
 	}
+
+	close(channel)
+	wc.Wait()
 }
 
-var wg = sync.WaitGroup{}
-
-// AddFeed adds all torrents that match filter to transmission
-func (c TransmissionClient) addFeed(conf config.Feed, feed *Feed, client *RateClient, seen helper.SeenTorrent) {
-
-	for _, matcher := range conf.Matchers {
-
-		logger.Info("Processing match: %v\n", matcher.RegExp)
-
-		filter, err := CreateFilter(matcher, conf)
-		if err != nil {
-			logger.Error("Error while creating torrent filter: %v\n", err)
-			continue
-		}
-
-		for _, item := range feed.Channel.Items {
-
-			wg.Add(1)
-			go c.processItem(item, filter, client, seen)
-		}
-	}
-	wg.Wait()
+// TorrentReq ...
+type TorrentReq struct {
+	Link         string
+	Title        string
+	DownloadPath string
+	TorrentPath  string
 }
 
-func (c TransmissionClient) processItem(item FeedItem, filter *Filter, client *RateClient, seen helper.SeenTorrent) {
+func (c TransmissionClient) processItem(item FeedItem, filter *Filter, channel chan<- TorrentReq, seen helper.SeenTorrent) {
 
 	defer wg.Done()
 
 	if !FilterTorrent(item, filter) {
 		logger.Info("Torrent does not match filter: %v\n", item.Title)
+		time.Sleep(1*time.Second)
 		return
 	}
 
 	if seen.Contain(item.Title) {
 		logger.Info("Torrent already seen: %v\n", item.Title)
+		time.Sleep(1*time.Second)
 		return
 	}
 
-	if len(c.TorrentPath) != 0 {
-
-		torrentPath := path.Join(c.TorrentPath, item.Title+".torrent")
-
-		if _, err := os.Stat(torrentPath); os.IsNotExist(err) {
-
-			err := getTorrent(item.Link, client.Client, torrentPath)
-			if err != nil {
-				logger.Error("Unable to download torrent: %v\n", err)
-				return
-			}
-		}
-
-		_, err := addTorrent(torrentPath, &c.RPCClient, filter.DownloadPath)
-		if err != nil {
-			logger.Error("Unable to add torrent: %v\n", err)
-			return
-		}
-		seen.AddSeen(item.Title)
-
-	} else {
-		_, err := addTorrentURL(item.Link, &c.RPCClient, filter.DownloadPath)
-		if err != nil {
-			logger.Error("Unable to add torrent: %v\n", err)
-			return
-		}
-		seen.AddSeen(item.Title)
+	channel <- TorrentReq{
+		Link:         item.Link,
+		Title:        item.Title,
+		DownloadPath: filter.DownloadPath,
+		TorrentPath:  path.Join(c.TorrentPath, item.Title+".torrent"),
 	}
 }

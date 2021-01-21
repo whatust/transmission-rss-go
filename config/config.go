@@ -8,14 +8,14 @@ import (
 
 // Server struct used to parse yaml file
 type Server struct {
-	Host         string `yaml:"host"`
-	Port         int    `yaml:"port"`
-	TLS          bool   `yaml:"tls"`
-	RateTime     int    `yaml:"rateTime"`
-	RPCPath      string `yaml:"rpcPath"`
-	Proxy        string `yaml:"proxy"`
-	ProxyPort    string `yaml:"proxyPort"`
-	ValidateCert bool   `yaml:"validateCert"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	TLS      bool   `yaml:"tls"`
+	RateTime int    `yaml:"rateTime"`
+	RPCPath  string `yaml:"rpcPath"`
+	Proxy    string `yaml:"proxy"`
+	//ProxyPort    string `yaml:"proxyPort"`
+	ValidateCert bool `yaml:"validateCert"`
 }
 
 // Connect struct used to parse yaml file
@@ -46,15 +46,15 @@ type Creds struct {
 
 // Config struct used to parse yaml file
 type Config struct {
-	Server      Server  `yaml:"server"`
-	Log         Log     `yaml:"log"`
-	Creds       Creds   `yaml:"login"`
-	Connect     Connect `yaml:"connection"`
-	SeenFile    string  `yaml:"seenFile"`
-	RSSFile     string  `yaml:"rssFile"`
-	UIDType     string  `yaml:"uID"`
-	SaveTorrent bool    `yaml:"saveTorrent"`
-	TorrentPath string  `yaml:"torrentPath"`
+	Server   Server  `yaml:"server"`
+	Log      Log     `yaml:"log"`
+	Creds    Creds   `yaml:"login"`
+	Connect  Connect `yaml:"connection"`
+	SeenFile string  `yaml:"seenFile"`
+	RSSFile  string  `yaml:"rssFile"`
+	UIDType  string  `yaml:"uID"`
+	//SaveTorrent bool    `yaml:"saveTorrent"`
+	TorrentPath string `yaml:"torrentPath"`
 }
 
 // NewConfig ...
@@ -66,6 +66,9 @@ func NewConfig() Config {
 			ValidateCert: true,
 			RPCPath:      "/transmission/rpc",
 			Port:         9091,
+			Proxy:        "",
+			Host:         "localhost",
+			TLS:          false,
 		},
 		Connect: Connect{
 			Retries:  10,
@@ -80,6 +83,8 @@ func NewConfig() Config {
 			MaxAge:     10,
 			LocalTime:  true,
 			Formatter:  "JSON",
+			Compress:   false,
+			LogPath: "/var/log/transmission-rss-log.log",
 		},
 		SeenFile: "/etc/transmission-rss-seen.log",
 		RSSFile:  "/etc/transmission-rss-feeds.yml",
