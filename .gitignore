@@ -1,2 +1,3 @@
 local_test/*
 bin/*
+test/seen/save

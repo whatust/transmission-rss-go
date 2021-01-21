@@ -1,10 +1,10 @@
 package client
 
 import (
-	//"fmt"
-	//"net/http"
-	//"io/ioutil"
 	"encoding/xml"
+	"io/ioutil"
+	"net/http"
+	"time"
 
 	"github.com/whatust/transmission-rss/logger"
 )
@@ -25,13 +25,14 @@ type Feed struct {
 }
 
 // ParseXML ...
-func ParseXML(resp []byte) (*Feed, error) {
+func ParseXML(resp []byte) *Feed {
 
 	var feed Feed
 
 	err := xml.Unmarshal([]byte(resp), &feed)
 	if err != nil {
-		return nil, err
+		logger.Error("%v", err)
+		return nil
 	}
 
 	if logger.IsLevelGreaterEqual(logger.DebugLevel) {
@@ -44,5 +45,35 @@ func ParseXML(resp []byte) (*Feed, error) {
 		logger.Debug("RSS Feed:\n%v\n", feed)
 	}
 
-	return &feed, nil
+	return &feed
+}
+
+// ParseResponseXML ...
+func ParseResponseXML(resp *http.Response, waitTime int) *Feed {
+
+	if resp.StatusCode == http.StatusOK {
+
+		data, err := ioutil.ReadAll(resp.Body)
+
+		if err != nil {
+			logger.Error("Unable to read response body: %v", err)
+			logger.Error("Waiting %v seconds until retry\n", waitTime)
+			time.Sleep(time.Duration(waitTime) * time.Second)
+			return nil
+		}
+
+		feed := ParseXML(data)
+
+		if feed == nil {
+			logger.Error("Waiting %v seconds until retry\n", waitTime)
+			time.Sleep(time.Duration(waitTime) * time.Second)
+			return nil
+		}
+
+		return feed
+	}
+	logger.Error("Response Status Code(%v)\n", resp.StatusCode)
+	logger.Error("Waiting %v seconds until retry\n", waitTime)
+
+	return nil
 }

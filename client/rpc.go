@@ -2,7 +2,6 @@ package client
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -92,36 +91,18 @@ func (c TransmissionClient) RetriveFeed(client Client, url string) (*Feed, error
 
 		if err != nil {
 			logger.Error("Response error: %v", err)
-			logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
+			logger.Error("Waiting %v seconds until retry", c.ConnectionConf.WaitTime)
 			time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
 		} else {
-			defer resp.Body.Close()
 
-			if resp.StatusCode == http.StatusOK {
+			feed := ParseResponseXML(resp, c.ConnectionConf.WaitTime)
+			resp.Body.Close()
 
-				data, err := ioutil.ReadAll(resp.Body)
-
-				if err != nil {
-					logger.Error("Unable to read response body.")
-					logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
-					time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
-					continue
-				}
-
-				feed, err := ParseXML(data)
-
-				if err != nil {
-					logger.Error("Unable to parse XML.")
-					logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
-					time.Sleep(time.Duration(c.ConnectionConf.WaitTime) * time.Second)
-					continue
-				}
-
-				return feed, nil
+			if feed == nil {
+				continue
 			}
 
-			logger.Error("Response Status Code(%v)\n", resp.StatusCode)
-			logger.Error("Waiting %v seconds until retry\n", c.ConnectionConf.WaitTime)
+			return feed, nil
 		}
 	}
 
