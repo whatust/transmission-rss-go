@@ -1,0 +1,6 @@
+{"level":"info","msg":"Initializing Server: http://transmission-test:9091/transmission/rpc\n","time":"2021-01-20T23:26:05-03:00"}
+{"level":"info","msg":"Getting session ID from: http://transmission-test:9091/transmission/rpc","time":"2021-01-20T23:26:05-03:00"}
+{"level":"info","msg":"Getting session ID","time":"2021-01-20T23:26:05-03:00"}
+{"level":"info","msg":"SessionID: nqTp4WYc0i1HhTZ4A6l7V4VaAe4khzGhAERkxRw6vcvUVRDe","time":"2021-01-20T23:26:05-03:00"}
+{"level":"info","msg":"Client Initialized\n","time":"2021-01-20T23:26:05-03:00"}
+{"level":"error","msg":"Could not parse RSS feed list: open test/config/transmission-rss-feeds.yml: no such file or directory","time":"2021-01-20T23:26:05-03:00"}

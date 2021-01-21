@@ -1,0 +1,6 @@
+server:
+  host: localhost
+
+login:
+  username: transmission
+  password: transmission
