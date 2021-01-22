@@ -12,7 +12,7 @@ import (
 
 func TestParseXML(t *testing.T) {
 
-	var tests = []struct{
+	var tests = []struct {
 		filename string
 		expected *Feed
 	}{
@@ -21,27 +21,27 @@ func TestParseXML(t *testing.T) {
 				Channel: Channel{
 					Items: []FeedItem{
 						{
-							Title: "title1",
-							Link: "http://example1.com",
-							Remake: "Yes",
+							Title:   "title1",
+							Link:    "http://example1.com",
+							Remake:  "Yes",
 							Trusted: "Yes",
 						},
 						{
-							Title: "title2",
-							Link: "http://example2.com",
-							Remake: "Yes",
+							Title:   "title2",
+							Link:    "http://example2.com",
+							Remake:  "Yes",
 							Trusted: "No",
 						},
 						{
-							Title: "title3",
-							Link: "http://example3.com",
-							Remake: "No",
+							Title:   "title3",
+							Link:    "http://example3.com",
+							Remake:  "No",
 							Trusted: "No",
 						},
 						{
-							Title: "title4",
-							Link: "http://example4.com",
-							Remake: "No",
+							Title:   "title4",
+							Link:    "http://example4.com",
+							Remake:  "No",
 							Trusted: "Yes",
 						},
 					},
@@ -67,37 +67,37 @@ func TestParseXML(t *testing.T) {
 
 func TestParseResponseXML(t *testing.T) {
 
-	var tests = []struct{
-		statuscode  int
-		filename string
-		expected *Feed
+	var tests = []struct {
+		statuscode int
+		filename   string
+		expected   *Feed
 	}{
 		{200, "../test/feed/feed1.xml",
 			&Feed{
 				Channel: Channel{
 					Items: []FeedItem{
 						{
-							Title: "title1",
-							Link: "http://example1.com",
-							Remake: "Yes",
+							Title:   "title1",
+							Link:    "http://example1.com",
+							Remake:  "Yes",
 							Trusted: "Yes",
 						},
 						{
-							Title: "title2",
-							Link: "http://example2.com",
-							Remake: "Yes",
+							Title:   "title2",
+							Link:    "http://example2.com",
+							Remake:  "Yes",
 							Trusted: "No",
 						},
 						{
-							Title: "title3",
-							Link: "http://example3.com",
-							Remake: "No",
+							Title:   "title3",
+							Link:    "http://example3.com",
+							Remake:  "No",
 							Trusted: "No",
 						},
 						{
-							Title: "title4",
-							Link: "http://example4.com",
-							Remake: "No",
+							Title:   "title4",
+							Link:    "http://example4.com",
+							Remake:  "No",
 							Trusted: "Yes",
 						},
 					},

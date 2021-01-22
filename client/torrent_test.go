@@ -16,8 +16,8 @@ func TestGetTorrent(t *testing.T) {
 	var tests = []struct {
 		filename string
 	}{
-		{"../test/torrent/torrent0.torrent" },
-		{"../test/torrent/torrent1.torrent" },
+		{"../test/torrent/torrent0.torrent"},
+		{"../test/torrent/torrent1.torrent"},
 	}
 
 	for idx, test := range tests {
@@ -27,7 +27,7 @@ func TestGetTorrent(t *testing.T) {
 			fmt.Printf("%v\n", err)
 		}
 
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			binary.Write(w, binary.LittleEndian, data)
 		}))
 

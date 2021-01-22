@@ -46,14 +46,14 @@ type Creds struct {
 
 // Config struct used to parse yaml file
 type Config struct {
-	Server   Server  `yaml:"server"`
-	Log      Log     `yaml:"log"`
-	Creds    Creds   `yaml:"login"`
-	Connect  Connect `yaml:"connection"`
-	SeenFile string  `yaml:"seenFile"`
-	RSSFile  string  `yaml:"rssFile"`
-	TorrentPath string `yaml:"torrentPath"`
-	Proxy       string `yaml:"proxy"`
+	Server      Server  `yaml:"server"`
+	Log         Log     `yaml:"log"`
+	Creds       Creds   `yaml:"login"`
+	Connect     Connect `yaml:"connection"`
+	SeenFile    string  `yaml:"seenFile"`
+	RSSFile     string  `yaml:"rssFile"`
+	TorrentPath string  `yaml:"torrentPath"`
+	Proxy       string  `yaml:"proxy"`
 	//UIDType  string  `yaml:"uID"`
 	//SaveTorrent bool    `yaml:"saveTorrent"`
 }
