@@ -17,19 +17,22 @@ type FeedItem struct {
 	Trusted string `xml:"trusted"`
 }
 
+// Channel ...
+type Channel struct {
+	Items []FeedItem `xml:"item"`
+}
+
 // Feed structure that wraps the list of torrents
 type Feed struct {
-	Channel struct {
-		Items []FeedItem `xml:"item"`
-	} `xml:"channel"`
+	Channel Channel `xml:"channel"`
 }
 
 // ParseXML ...
-func ParseXML(resp []byte) *Feed {
+func ParseXML(body []byte) *Feed {
 
 	var feed Feed
 
-	err := xml.Unmarshal([]byte(resp), &feed)
+	err := xml.Unmarshal([]byte(body), &feed)
 	if err != nil {
 		logger.Error("%v", err)
 		return nil

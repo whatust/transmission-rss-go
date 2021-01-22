@@ -79,8 +79,8 @@ func TestGetFeedsConfig(t *testing.T) {
 		expected    *FeedConfig
 		expectedErr error
 	}{
-		{"../test/feed/unknwon.xml", nil, fmt.Errorf("open ../test/config/unknown.yml: no such file or directory")},
-		{"../test/feed/feed1.xml",
+		{"../test/feed/unknwon.yml", nil, fmt.Errorf("open ../test/config/unknown.yml: no such file or directory")},
+		{"../test/feed/feed1.yml",
 			&FeedConfig{
 				Feeds: []Feed{
 					{

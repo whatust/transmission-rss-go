@@ -1,3 +1,4 @@
 local_test/*
 bin/*
 test/seen/save
+test/torrent/torrent*_save.torrent
