@@ -1,11 +1,8 @@
 transmission-rss
 ================
 
-<p align="center">
-</a>
-<a href="https://travis-ci.com/whatust/transmission-rss-go"><img src="https://travis-ci.com/whatust/transmission-rss-go.svg?branch=main"></a>
-<a href="https://goreportcard.com/badge/github.com/whatust/transmission-rss-go"><img src="https://goreportcard.com/badge/github.com/whatust/transmission-rss-go"></a>
-</p>
+[![Build status][build-img]][build]
+[![Code Coverage][coverage-img]][coverage] 
 
 Installation
 ------------
@@ -109,3 +106,8 @@ Make sure `ExecStart` has the full path to the binary.
 
 Add the line bellow to the crontab file to run transmission-rss every 15 min.
 `*/15 * * * * /usr/bin/transmission-rss`
+
+[build-img]: https://www.travis-ci.com/whatust/transmission-rss-go.svg?branch=main
+[build]: https://www.travis-ci.com/whatust/transmission-rss-go
+[coverage-img]https://codecov.io/gh/whatust/transmission-rss-go/branch/main/graph/badge.svg?token=QIUAJ9KA3A)
+[coverage]https://codecov.io/gh/whatust/transmission-rss-go
