@@ -136,7 +136,7 @@ func (c TransmissionClient) getSessionID() (string, error) {
 	}
 
 	if len(sessionID) == 0 {
-		return "", fmt.Errorf("All retries failed could not retrieve sessionID")
+		return sessionID, fmt.Errorf("All %v retries failed could not retrieve sessionID", c.ConnectionConf.Retries)
 	}
 	logger.Info("SessionID: %v", sessionID)
 
