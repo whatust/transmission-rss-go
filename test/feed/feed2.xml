@@ -1,0 +1,26 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+	<channel>
+		<title></title>
+		<description></description>
+		<link></link>
+		<atom:link href="https:example.com/?page=rss" rel="self" type="application/rss+xml" />
+		<item>
+			<title>title1</title>
+				<link>http://example1.com</link>
+				<guid isPermaLink="true"></guid>
+				<pubDate>Mon, 01 Jan 2000 00:00:00 -0000</pubDate>
+
+				<seeders>0</seeders>
+				<leechers>0</leechers>
+				<downloads>0</downloads>
+				<infoHash>1234567890101112131415161718192021222324</infoHash>
+			<categoryId>1</categoryId>
+			<category>category</category>
+			<size>100.0 MiB</size>
+			<comments>0</comments>
+			<trusted>Yes</trusted>
+			<remake>Yes</remake>
+			<description>description</description>
+		</item>
+	</channels>
+</rss>

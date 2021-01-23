@@ -14,6 +14,7 @@ func TestGetConfig(t *testing.T) {
 		expectedErr error
 	}{
 		{"../test/config/unknown.yml", nil, fmt.Errorf("open ../test/config/unknown.yml: no such file or directory")},
+		{"../test/config/wrong.yml", nil, fmt.Errorf("yaml") },
 		{"../test/config/minimal.yml",
 			&Config{
 				Server: Server{
@@ -80,6 +81,7 @@ func TestGetFeedsConfig(t *testing.T) {
 		expectedErr error
 	}{
 		{"../test/feed/unknwon.yml", nil, fmt.Errorf("open ../test/config/unknown.yml: no such file or directory")},
+		{"../test/feed/wrong_feed.yml", nil, fmt.Errorf("yaml") },
 		{"../test/feed/feed1.yml",
 			&FeedConfig{
 				Feeds: []Feed{

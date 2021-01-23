@@ -48,6 +48,7 @@ func TestParseXML(t *testing.T) {
 				},
 			},
 		},
+		{"../test/feed/feed2.xml", nil },
 	}
 
 	for idx, test := range tests {
@@ -105,6 +106,7 @@ func TestParseResponseXML(t *testing.T) {
 			},
 		},
 		{429, "../test/feed/unknown1.xml", nil},
+		{200, "../test/feed/unknown1.xml", nil},
 		{429, "../test/feed/feed1.xml", nil},
 	}
 

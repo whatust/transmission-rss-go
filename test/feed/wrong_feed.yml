@@ -1,0 +1,20 @@
+feeds:
+  - url: https:feed1.com
+    matchers:
+      - regexp: regexp0
+        downloadPath: /var/lib/transmission-daemon/downloads
+        ignoreRemake: true
+        onlyTrusted: true
+      - regexp: regexp1
+        downloadPath: /var/lib/transmission-daemon/downloads
+        onlyTrusted: true
+      - regexp: regexp2
+        downloadPath: /var/lib/transmission-daemon/downloads
+    validateCert: true
+  - url: http:feed2.org
+    matchers:
+      - regexp: regexp3
+        downloadPath: /var/lib/transmission-daemon/downloads
+        ignoreRemake: true
+    proxy: http://localhost:8080
+    seedRationLimit: 1:
