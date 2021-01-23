@@ -1,7 +1,7 @@
 transmission-rss
 ================
 
-[![Build status][build-img]][build] [![Code Coverage][cov-img]][cov] 
+[![Build status][build-img]][build] [![codecov](https://codecov.io/gh/whatust/transmission-rss-go/branch/main/graph/badge.svg?token=QIUAJ9KA3A)](https://codecov.io/gh/whatust/transmission-rss-go)
 
 Installation
 ------------
