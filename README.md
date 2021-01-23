@@ -108,5 +108,5 @@ Add the line bellow to the crontab file to run transmission-rss every 15 min.
 
 [build-img]: https://www.travis-ci.com/whatust/transmission-rss-go.svg?branch=main
 [build]: https://www.travis-ci.com/whatust/transmission-rss-go
-[cov-img]: https://codecov.io/gh/whatust/transmission-rss-go/branch/main/graph/badge.svg?token=QIUAJ9KA3A)
+[cov-img]: https://codecov.io/gh/whatust/transmission-rss-go/branch/main/graph/badge.svg?token=QIUAJ9KA3A
 [cov]: https://codecov.io/gh/whatust/transmission-rss-go
