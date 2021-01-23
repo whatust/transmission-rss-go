@@ -1,8 +1,7 @@
 transmission-rss
 ================
 
-[![Build status][build-img]][build]
-[![Code Coverage][cov-img]][cov] 
+[![Build status][build-img]][build] [![Code Coverage][cov-img]][cov] 
 
 Installation
 ------------
