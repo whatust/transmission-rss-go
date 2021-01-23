@@ -17,7 +17,7 @@ type Filter struct {
 }
 
 // CreateFilter creates filter to match torrent
-func CreateFilter(matcher config.Matcher, conf config.Feed) (*Filter, error) {
+func CreateFilter(matcher config.Matcher) (*Filter, error) {
 
 	filter := Filter{
 		RegExp:       regexp.MustCompile(matcher.RegExp),
@@ -26,9 +26,9 @@ func CreateFilter(matcher config.Matcher, conf config.Feed) (*Filter, error) {
 		OnlyTrusted:  matcher.OnlyTrusted,
 	}
 
-	if len(filter.DownloadPath) == 0 {
+	/*if len(filter.DownloadPath) == 0 {
 		filter.DownloadPath = conf.DefaultDownloadPath
-	}
+	}*/
 	if len(filter.DownloadPath) == 0 {
 		return nil, fmt.Errorf("Download path must be set")
 	}

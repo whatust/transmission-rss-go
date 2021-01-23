@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -145,8 +146,8 @@ func addTorrentURL(items <-chan TorrentReq, client *RPCClient, connection config
 			}
 		}
 
-		if i == 10 {
-			logger.Error("All retries failed could not add torrent %v\n", item.Link)
+		if i == connection.Retries {
+			logger.Error("All %v retries failed could not add torrent %v\n", i, item.Link)
 		}
 	}
 }
@@ -229,8 +230,7 @@ func addTorrent(data []byte, client *RPCClient) error {
 	}
 
 	if body.Result != "success" {
-		logger.Error("Unable to add torrent: %v\n", body)
-		return err
+		return fmt.Errorf("Unable to add torrent: %v", body)
 	}
 
 	hashString := body.Arguments.TorrentAdded.HashString

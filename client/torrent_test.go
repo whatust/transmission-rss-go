@@ -15,9 +15,12 @@ func TestGetTorrent(t *testing.T) {
 
 	var tests = []struct {
 		filename string
+		statusCode int
 	}{
-		{"../test/torrent/torrent0.torrent"},
-		{"../test/torrent/torrent1.torrent"},
+		{"../test/torrent/torrent0.torrent", 200},
+		{"../test/torrent/torrent1.torrent", 200},
+		{"../test/torrent/torrent1.torrent", 429},
+		{"../test/torrent/torrent1.torrent", 404},
 	}
 
 	for idx, test := range tests {
@@ -28,7 +31,11 @@ func TestGetTorrent(t *testing.T) {
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			binary.Write(w, binary.LittleEndian, data)
+			if test.statusCode != 200 {
+				w.WriteHeader(test.statusCode)
+			} else {
+				binary.Write(w, binary.LittleEndian, data)
+			}
 		}))
 
 		client := server.Client()

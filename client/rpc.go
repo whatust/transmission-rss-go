@@ -176,7 +176,7 @@ func (c TransmissionClient) AddFeeds(confs []config.Feed, seen helper.SeenTorren
 
 			logger.Info("Processing match: %v\n", matcher.RegExp)
 
-			filter, err := CreateFilter(matcher, conf)
+			filter, err := CreateFilter(matcher)
 			if err != nil {
 				logger.Error("Error while creating torrent filter: %v\n", err)
 				continue
