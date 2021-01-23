@@ -22,6 +22,7 @@ func getTorrent(link string, clt Client, torrentFilename string) error {
 		return err
 	}
 	defer resp.Body.Close()
+	fmt.Printf("Code: %v\n", resp.StatusCode)
 
 	logger.Info("Response: %v\n", resp.StatusCode)
 

@@ -125,9 +125,9 @@ type Matcher struct {
 // Feed strcut used to parse yaml file
 type Feed struct {
 	URL                 string    `yaml:"url"`
-	DefaultDownloadPath string    `yaml:"defaultDownloadPath"`
-	DefaultIgnoreRemake string    `yaml:"defaultIgnoreRemake"`
-	DefaultValidateCert string    `yaml:"defaultValidateCert"`
+	//DefaultDownloadPath string    `yaml:"defaultDownloadPath"`
+	//DefaultIgnoreRemake string    `yaml:"defaultIgnoreRemake"`
+	//DefaultValidateCert string    `yaml:"defaultValidateCert"`
 	SeedRatioLimit      int       `yaml:"seedRationLimit"`
 	Matchers            []Matcher `yaml:"matchers"`
 	Proxy               string    `yaml:"proxy"`
