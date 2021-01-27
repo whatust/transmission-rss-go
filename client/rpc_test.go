@@ -1,8 +1,12 @@
 package client
 
 import (
+	"encoding/binary"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -141,6 +145,90 @@ func TestInitialize(t *testing.T) {
 		}else{
 			if test.expectedError == nil {
 				t.Errorf("Test %v Failed:\nGot:      %v\nExpected: %v", idx, err, test.expectedError)
+			}
+		}
+	}
+}
+
+func TestRetrieveFeed(t *testing.T) {
+
+	var tests = []struct{
+		statusCode int
+		filename string
+		retries int
+		waitTime int
+		connectError bool
+		expected *Feed
+		expectedErr error
+	}{ { 
+			200,
+			"../test/feed/feed1.xml",
+			10, 3, false,
+			&Feed{
+				Channel: Channel{
+					Items: []FeedItem {
+						{
+							Title: "title1",
+							Link: "http://example1.com",
+							Remake: "Yes",
+							Trusted: "Yes",
+						},
+						{
+							Title: "title2",
+							Link: "http://example2.com",
+							Remake: "Yes",
+							Trusted: "No",
+						},
+						{
+							Title: "title3",
+							Link: "http://example3.com",
+							Remake: "No",
+							Trusted: "No",
+						},
+						{
+							Title: "title4",
+							Link: "http://example4.com",
+							Remake: "No",
+							Trusted: "Yes",
+						},
+					},
+				},
+			},
+			nil,
+		},
+	}
+
+	for idx, test := range tests{
+
+		tclient := TransmissionClient {
+			ConnectionConf: config.Connect{
+				Retries: test.retries,
+				WaitTime: test.waitTime,
+			},
+		}
+
+		data, err:= ioutil.ReadFile(test.filename)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r* http.Request){
+			if test.statusCode != 200 {
+				w.WriteHeader(test.statusCode)
+			}else{
+				binary.Write(w, binary.LittleEndian, data)
+			}
+		}))
+
+		feed, err := tclient.RetriveFeed(server.Client(), server.URL)
+
+		if err == nil {
+			if !reflect.DeepEqual(feed, test.expected) {
+				t.Errorf("Test %v Failed:\nGot:         %v\nExpected: %v\n", idx, feed, test.expected)
+			}
+		} else {
+			if test.expectedErr == nil {
+				t.Errorf("Test %v Failed:\nGot:         %v\nExpected: %v\n", idx, err, test.expectedErr)
 			}
 		}
 	}

@@ -96,6 +96,7 @@ func (c TransmissionClient) RetriveFeed(client Client, url string) (*Feed, error
 		} else {
 
 			feed := ParseResponseXML(resp, c.ConnectionConf.WaitTime)
+			fmt.Printf("Body: %v\n", resp.Body)
 			resp.Body.Close()
 
 			if feed == nil {
